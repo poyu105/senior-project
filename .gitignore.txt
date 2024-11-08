@@ -1,0 +1,14 @@
+# 忽略 Git 目錄
+.git/
+.github/
+
+# 忽略 Python 目錄中的檔案
+
+# 忽略 Web 目錄中的檔案
+web/senior_project_web/.vs/
+web/senior_project_web/senior_project_web/bin/
+web/senior_project_web/senior_project_web/obj/
+web/senior_project_web/senior_project_web/Properties/launchSettings.json
+web/senior_project_web/senior_project_web/wwwroot/lib/
+web/senior_project_web/senior_project_web/appsettings.Development.json
+web/senior_project_web/senior_project_web/senior_project_web.csproj.user
