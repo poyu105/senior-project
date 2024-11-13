@@ -12,7 +12,7 @@ CREATE TABLE [User](
 
 --建立Admin資料表
 CREATE TABLE Admin(
-	admin_id VARCHAR(64) PRIMARY KEY,					--由C#的Guid自動生成並帶進資料庫
+	admin_id UNIQUEIDENTIFIER PRIMARY KEY,					--由SQL SERVER的Guid自動生成
 	admin_account INT IDENTITY(1000,1) NOT NULL,		--管理員帳號，由1000自動遞增1
 	password VARCHAR(255) NOT NULL,						--密碼
 	create_at DATETIME DEFAULT GETDATE(),				--資料創建時間(自動生成)
