@@ -1,0 +1,22 @@
+﻿@model AdminModel
+
+@{
+    ViewData["Title"] = "登入管理員系統";
+}
+<h1>@ViewData["Title"]</h1>
+<form asp-controller="Auth" asp-action="Login" method="post">
+    @{
+        if (ViewBag.errMsg != null)
+        {
+            <span>@ViewBag.errMsg</span>
+        }
+    }
+    <label>帳號</label>
+    <input type="text" placeholder="請輸入帳號" asp-for="admin_account"/>
+    <label>密碼</label>
+    <input type="password" placeholder="請輸入密碼" asp-for="password"/>
+    <button type="submit">登入</button>
+    <button>
+        <a asp-controller="Auth" asp-action="Register">註冊</a>
+    </button>
+</form>

@@ -1,0 +1,22 @@
+﻿@model AdminModel
+
+@{
+    ViewData["Title"] = "新增管理員";
+}
+<h1>新增管理員</h1>
+@{
+    @if (ViewBag.errMsg != null)
+    {
+        <span>@ViewBag.errMsg</span>
+    }
+}
+<form asp-controller="Auth" asp-action="Register" method="post">
+    <lebal>電子郵件</lebal>
+    <input type="email" name="email"/>
+    <label>密碼</label>
+    <input type="password" asp-for="password"/>
+    <button type="submit">註冊</button>
+    <button>
+        <a asp-controller="Auth" asp-action="Login">登入</a>
+    </button>
+</form>
