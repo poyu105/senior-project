@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using senior_project_web.Data;
+using System.Security.Claims;
 
 namespace senior_project_web.Controllers
 {
@@ -22,11 +23,13 @@ namespace senior_project_web.Controllers
                 return RedirectToAction("Login","Auth"); //如果沒有用戶登入，則導航至AuthController, Login方法
             }
 
-            var account = Convert.ToInt32(User.Identity.Name);
-            var user = await _context.Admin.FirstOrDefaultAsync(u => u.admin_account == account);
+            var admin_id = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var user = await _context.Admin
+                .Include(a => a.User)   //包含User資料
+                .FirstOrDefaultAsync(u => u.admin_id == admin_id);
             if (user == null)
             {
-                return RedirectToAction("Logout","Auth"); // 若找不到使用者資料，登出並返回登入頁面
+                return RedirectToAction("Logout","Auth"); // 若找不到Admin資料(無權限)，登出並返回登入頁面
             }
 
             return View(user);
