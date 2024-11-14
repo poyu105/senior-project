@@ -29,6 +29,6 @@ namespace senior_project_web.Models
         // FK
         [Required]
         public string meal_id { get; set; }
-        public MealModel meal { get; set; }
+        public MealModel Meal { get; set; }
     }
 }

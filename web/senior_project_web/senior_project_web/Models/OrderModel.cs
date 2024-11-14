@@ -20,6 +20,6 @@ namespace senior_project_web.Models
         // FK
         [Required]
         public string user_id { get; set; }
-        public UserModel user { get; set; }
+        public UserModel User { get; set; }
     }
 }
