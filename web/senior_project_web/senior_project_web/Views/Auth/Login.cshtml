@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "登入管理員系統";
 }
-<h1>@ViewData["Title"]</h1>
 <form asp-controller="Auth" asp-action="Login" method="post">
     @{
         if (ViewBag.errMsg != null)
