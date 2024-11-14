@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -20,7 +21,7 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">菜單</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">管理員系統</a>
@@ -29,10 +30,10 @@
                             if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="">庫存管理</a>
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Inventory">庫存管理</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="">銷售預測</a>
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Prediction">銷售預測</a>
                                 </li>
                             }
                         }
@@ -43,6 +44,20 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
+            <div class="d-flex justify-content-between align-items-baseline border-bottom mb-3 pb-2">
+                <h1 class="m-0">@ViewData["Title"]</h1>
+                @{
+                    if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+                    {
+                        <div>
+                            <span>Hello, @User.FindFirst(ClaimTypes.Name)?.Value</span>
+                            <button>
+                                <a asp-controller="Auth" asp-action="Logout">登出系統</a>
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
             @RenderBody()
         </main>
     </div>
