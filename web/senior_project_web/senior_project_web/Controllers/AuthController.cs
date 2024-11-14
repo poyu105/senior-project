@@ -27,7 +27,7 @@ namespace senior_project_web.Controllers
         public async Task<IActionResult> Login(int admin_account, string password)
         {
             //從資料庫找尋是否有admin帳號存在
-            var user = await _context.Admin.FirstOrDefaultAsync(u => u.admin_account == admin_account);
+            var user = await _context.Admin.Include(a => a.User).FirstOrDefaultAsync(u => u.admin_account == admin_account);
             if (user == null)
             {
                 ViewBag.errMsg = "帳號或密碼錯誤!";
@@ -48,7 +48,7 @@ namespace senior_project_web.Controllers
             //登入成功，建立Cookie
             Claim[] claims = new[]
             {
-                new Claim(ClaimTypes.Name, account), //使用Name來儲存帳號
+                new Claim(ClaimTypes.Name, user.User.username), //使用Name來儲存帳號
                 new Claim(ClaimTypes.NameIdentifier, id), //用來辨識唯一用戶
                 new Claim(ClaimTypes.Role, "Admin") //新增登入角色
             };
