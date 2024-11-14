@@ -1,11 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace senior_project_web.Models
 {
     public class MealModel
     {
         [Key]
-        public string meal_id {  get; set; } //Guid
+        public Guid meal_id {  get; set; } //Guid
 
         [Required]
         [MaxLength(255)]
@@ -31,7 +32,8 @@ namespace senior_project_web.Models
 
         //FK
         [Required]
-        public string inventory_id { get; set; }
-        public InventoryModel inventory { get; set; }
+        [ForeignKey("inventory_id")]
+        public Guid inventory_id { get; set; }
+        public InventoryModel Inventory { get; set; }
     }
 }
