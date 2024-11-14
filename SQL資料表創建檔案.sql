@@ -33,7 +33,7 @@ CREATE TABLE [Order](
 
 --建立Inventory資料表(紀錄庫存)
 CREATE TABLE Inventory(
-	inventory_id VARCHAR(64) PRIMARY KEY,		--由C#的Guid自動生成並帶進資料庫
+	inventory_id UNIQUEIDENTIFIER PRIMARY KEY,		--由C#的Guid自動生成並帶進資料庫
 	quantity INT,								--庫存數量
 	create_at DATETIME DEFAULT GETDATE(),		--資料創建時間(自動生成)
 	update_at DATETIME DEFAULT GETDATE()		--資料更新時間(自動生成)
@@ -41,14 +41,14 @@ CREATE TABLE Inventory(
 
 --建立Meal資料表(存放商品資訊)
 CREATE TABLE Meal(
-	meal_id VARCHAR(64) PRIMARY KEY,			--由C#的Guid自動生成並帶進資料庫
+	meal_id UNIQUEIDENTIFIER PRIMARY KEY,			--由C#的Guid自動生成並帶進資料庫
 	name VARCHAR(255) NOT NULL,					--商品名稱
 	type VARCHAR(64) NOT NULL,					--類型
 	img_path VARCHAR(255) NOT NULL,				--圖片，檔案路徑(將圖片儲存到系統檔案中，並透過路徑呼叫)
 	description VARCHAR(255) NOT NULL,			--描述
 	price INT NOT NULL,							--售價(整數)
 	cost INT NOT NULL,							--成本(整數)
-	inventory_id VARCHAR(64) NOT NULL,
+	inventory_id UNIQUEIDENTIFIER NOT NULL,
 	FOREIGN KEY (inventory_id) REFERENCES [Inventory](inventory_id)		--inventory_id外鍵
 );
 
@@ -57,7 +57,7 @@ CREATE TABLE Order_Meal(
 	order_meal_id INT IDENTITY(1,1) PRIMARY KEY,			--id由1開始遞增1
 	quantity INT,								--訂購數量
 	order_id INT,
-	meal_id VARCHAR(64),
+	meal_id UNIQUEIDENTIFIER,
 	FOREIGN KEY (order_id) REFERENCES [Order](order_id),	--order_id外鍵
 	FOREIGN KEY (meal_id) REFERENCES Meal (meal_id)			--meal_id外鍵
 );
@@ -71,7 +71,7 @@ CREATE TABLE Prediction(
 	temperature INT NOT NULL,								--目標日期的溫度，只能存放整數!!!
 	model_version VARCHAR(32) NOT NULL,						--預測模型的版本
 	create_at DATETIME DEFAULT GETDATE(),					--資料創建時間(自動生成)
-	meal_id VARCHAR(64),						
+	meal_id UNIQUEIDENTIFIER,						
 	FOREIGN KEY (meal_id) REFERENCES [Meal](meal_id)		--meal_id外鍵(取得該商品的詳細資訊)
 );
 
@@ -81,6 +81,6 @@ CREATE TABLE Daily_Sales_Report(
     total_sales INT NOT NULL,					--單一產品銷售額 (整數)
     total_quantity INT NOT NULL,				--單一產品銷售量 (整數)
     date DATE NOT NULL,							--銷售日期(YYYY-MM-DD)
-    meal_id VARCHAR(64) NOT NULL,
+    meal_id UNIQUEIDENTIFIER NOT NULL,
 	FOREIGN KEY (meal_id) REFERENCES Meal(meal_id),			--meal_id外鍵
 );
