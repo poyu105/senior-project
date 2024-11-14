@@ -49,7 +49,8 @@ namespace senior_project_web.Controllers
             Claim[] claims = new[]
             {
                 new Claim(ClaimTypes.Name, account), //使用Name來儲存帳號
-                new Claim(ClaimTypes.NameIdentifier, id) //用來辨識唯一用戶
+                new Claim(ClaimTypes.NameIdentifier, id), //用來辨識唯一用戶
+                new Claim(ClaimTypes.Role, "Admin") //新增登入角色
             };
             //創建ClaimsIdentity，並設置驗證方案
             ClaimsIdentity claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
