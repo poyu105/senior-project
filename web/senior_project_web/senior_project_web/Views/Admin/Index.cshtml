@@ -4,5 +4,10 @@
     ViewData["Title"] = "管理員系統";
 }
 <h1>歡迎進入管理員系統</h1>
-<a asp-controller="Auth" asp-action="Logout">登出</a>
-<p>@Model.admin_id</p>
+<span>Hello, @Model.User.username</span>
+<button>
+    <a asp-controller="Auth" asp-action="Logout">登出系統</a>
+</button>    
+<button>
+    <a asp-controller="Auth" asp-action="Register">新增管理員</a>
+</button>
