@@ -28,6 +28,11 @@ namespace senior_project_web.Data
             modelBuilder.Entity<AdminModel>()
                 .Property(a => a.admin_account)
                 .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity<MealModel>()
+                .HasOne(m => m.Inventory)
+                .WithMany(i => i.Meal)
+                .HasForeignKey(m => m.inventory_id);
         }
     }
 }
