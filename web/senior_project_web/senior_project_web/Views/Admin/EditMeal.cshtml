@@ -1,0 +1,61 @@
+﻿@model MealModel
+
+@{
+    ViewData["Title"] = "編輯餐點";
+}
+<div class="d-flex justify-content-center">
+    <form class="d-flex flex-column border p-3 col-md-10 col-sm-9" method="post" asp-controller="Admin" asp-action="SaveChange" asp-route-meal_id="@Model.meal_id" enctype="multipart/form-data">
+        <div class="m-2">
+            <label class="form-label fs-5" for="img">圖片</label>
+            <input id="img" class="form-control" name="img_path" type="file" accept="image/*" onchange="previewImage(event)" />
+            <div class="text-center my-2">
+                <img id="imagePreview" class="w-50 h-55 0rounded" src="@Url.Content($"~/{Model.img_path}")" alt="餐點圖片" />
+            </div>
+        </div>
+        <div class="m-2">
+            <label class="form-label fs-5" for="name">名稱</label>
+            <input id="name" class="form-control" name="name" type="text" value="@Model.name" required/>
+        </div>
+        <div class="m-2">
+            <label class="form-label fs-5" for="type">類型</label>
+            <input id="type" class="form-control" name="type" type="text" value="@Model.type" required />
+        </div>
+        <div class="m-2">
+            <label class="form-label fs-5" for="description">描述</label>
+            <textarea id="description" class="form-control" name="describtion" required>@Model.description</textarea>
+        </div>
+        <div class="m-2">
+            <label class="form-label fs-5" for="cost">成本</label>
+            <input id="cost" class="form-control" name="cost" type="number" value="@Model.cost" min="0" required />
+        </div>
+        <div class="m-2">
+            <label class="form-label fs-5" for="price">價格</label>
+            <input id="price" class="form-control" name="price" type="number" value="@Model.price" min="0" required />
+        </div>
+        <div class="m-2">
+            <label class="form-label fs-5" for="quantity">庫存</label>
+            <input id="quantity" class="form-control" name="quantity" type="number" value="@Model.Inventory.quantity" min="0" required />
+        </div>
+        <div class="m-2 text-end">
+            <button type="button" class="btn btn-danger" onclick="resetPreviewImage(event); window.history.back();">取消</button>
+            <button type="submit" class="btn btn-primary">儲存</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    //預覽圖片
+    function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function () {
+            var output = document.getElementById('imagePreview');
+            output.src = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+    }
+    //重設圖片
+    function resetPreviewImage(event) {
+        var output = document.getElementById('imagePreview');
+        output.src = "@Url.Content($"~/{Model.img_path}")";
+    }
+</script>
