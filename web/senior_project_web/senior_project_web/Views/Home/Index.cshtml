@@ -1,8 +1,127 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@model List<MealModel>
+
+@{
+    ViewData["Title"] = "菜單";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="d-flex flex-row flex-wrap gap-4">
+    @{
+        foreach (var meal in Model)
+        {
+            <div class="card">
+                <img class="img-fluid card-img-top" style="width:250px; height:250px" src="https://localhost:7145/@meal.img_path" />
+                <div class="card-body">
+                    <h3 class="card-title">@meal.name</h3>
+                    <div class="d-flex flex-row justify-content-between align-items-center gap-2">
+                        <p class="card-text fs-5 m-0">NT$ @meal.price</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addToShoppingCart" onclick="updateModalInfo('@meal.meal_id')">加入購物車</button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
 </div>
+<!--加入購物車modal-->
+<div id="addToShoppingCart" class="modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-controller="Home">
+                <div class="modal-header">
+                    <h2 class="modal-title">Meal_Title</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <img class="img-fluid card-img-top" style="height: 350px; object-fit: cover;" src="" />
+                    <p id="description" class="modal-content fs-3">Describtion</p>
+                    <p id="price" class="fs-5">NT$ 00</p>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fs-5">請選擇數量</span>
+                        <button type="button" class="btn btn-outline-secondary" onclick="handleDecrease()">-</button>
+                        <input id="quantity" type="number" class="text-center" style="width: 50px;" value="1" min="1" max="100" />
+                        <button type="button" class="btn btn-outline-secondary" onclick="handleIncrease()">+</button>
+                        <p class="m-0">總價: NT$<span id="totalPrice"></span></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="reset" class="btn btn-danger" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-primary">加入購物車</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const modal = document.getElementById('addToShoppingCart');
+    let quantity = 1;
+    const showQuantity = document.getElementById('quantity');
+    let mealPrice = 0;
+    const showTotalPrice = document.getElementById('totalPrice');
+    //更新總價
+    const updateTotalPrice = () => {
+        var totalPrice = mealPrice * quantity;
+        showTotalPrice.textContent = totalPrice;
+    }
+    //處理減少數量
+    const handleDecrease = () => {
+        if (quantity > 1) {
+            quantity --;
+            showQuantity.value = quantity;
+            updateTotalPrice();
+        }else{
+            alert("數量必須大於0!");
+        }
+    }
+    //處理增加數量
+    const handleIncrease = () => {
+        if (quantity < 100) {
+            quantity ++;
+            showQuantity.value = quantity;
+            updateTotalPrice();
+        } else {
+            alert("超出訂購上限!");
+        }
+    }
+    // 處理用戶直接輸入數量
+    const handleQuantityInput = () => {
+        const userInput = parseInt(showQuantity.value, 10);
+        if (userInput <= 0 || userInput > 100) {
+            alert("請輸入有效的數量（1-100）");
+            showQuantity.value = quantity;  // 恢復為有效數量
+        } else {
+            quantity = userInput;
+            updateTotalPrice();
+        }
+    };
+    //更新對應modal的資料
+    const updateModalInfo = async (_meal_id) => {
+        try {
+            const response = await fetch(`meals/${_meal_id}`);
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Failed to fetch meal details: ${errorData.message}`);
+            }
+
+            const meal = await response.json();
+            mealPrice = meal.price;
+            
+            modal.querySelector('.modal-title').textContent = meal.name;
+            modal.querySelector('.modal-body img').src = meal.img_path;
+            modal.querySelector('#description').textContent = meal.description;
+            modal.querySelector('#price').textContent = "NT$ " + meal.price;
+            modal.querySelector('#totalPrice').textContent = meal.price;
+            updateTotalPrice(); //初始化總價格
+        } catch(error) {
+            console.error('Error fetching meal details:', error);
+            alert('無法取得餐點資料，請稍後再試。');
+        }
+    };
+    // 當modal關閉時，重置數量為1
+    modal.addEventListener('hide.bs.modal', () => {
+        quantity = 1;  // 重置數量為預設值
+        showQuantity.value = quantity;  // 更新數量輸入框顯示
+        updateTotalPrice();  // 更新總價
+    });
+    showQuantity.addEventListener('input', handleQuantityInput);
+</script>

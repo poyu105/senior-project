@@ -1,4 +1,8 @@
-﻿<!DOCTYPE html>
+﻿@using System.Security.Claims
+@{
+    var errMsg = TempData["errMsg"] != null ? Uri.EscapeDataString(TempData["errMsg"].ToString()) : null;
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -20,11 +24,22 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">菜單</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">管理員系統</a>
                         </li>
+                        @{
+                            if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Inventory">庫存管理</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Prediction">銷售預測</a>
+                                </li>
+                            }
+                        }
                     </ul>
                 </div>
             </div>
@@ -32,6 +47,20 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
+            <div class="d-flex justify-content-between align-items-baseline border-bottom mb-3 pb-2">
+                <h1 class="m-0">@ViewData["Title"]</h1>
+                @{
+                    if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
+                    {
+                        <div>
+                            <span>Hello, @User.FindFirst(ClaimTypes.Name)?.Value</span>
+                            <button>
+                                <a asp-controller="Auth" asp-action="Logout">登出系統</a>
+                            </button>
+                        </div>
+                    }
+                }
+            </div>
             @RenderBody()
         </main>
     </div>
@@ -41,6 +70,12 @@
             &copy; 2024 - senior_project_web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+    <script>
+        var errMsg = '@errMsg';
+        if (errMsg) {
+            alert(decodeURIComponent(errMsg));
+        }
+    </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
