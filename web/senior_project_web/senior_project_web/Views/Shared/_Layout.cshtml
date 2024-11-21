@@ -1,4 +1,7 @@
 ﻿@using System.Security.Claims
+@{
+    var errMsg = TempData["errMsg"] != null ? Uri.EscapeDataString(TempData["errMsg"].ToString()) : null;
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,6 +70,12 @@
             &copy; 2024 - senior_project_web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+    <script>
+        var errMsg = '@errMsg';
+        if (errMsg) {
+            alert(decodeURIComponent(errMsg));
+        }
+    </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
