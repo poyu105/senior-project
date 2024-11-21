@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using senior_project_web.Data;
 using senior_project_web.Models;
+using System.Collections.Concurrent;
 using System.Security.Claims;
 
 namespace senior_project_web.Controllers
@@ -56,7 +57,8 @@ namespace senior_project_web.Controllers
                 return RedirectToAction("Inventory");
             }
 
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", img_path.FileName);
+            var uniquePath = Guid.NewGuid() + Path.GetExtension(img_path.FileName); //使用Guid生成唯一路徑
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", uniquePath);
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await img_path.CopyToAsync(stream);
@@ -73,7 +75,7 @@ namespace senior_project_web.Controllers
             var newMeal = new MealModel
             {
                 name = name,
-                img_path = "images/" + img_path.FileName,
+                img_path = "images/"+uniquePath,
                 type = type,
                 description = description,
                 cost = cost,
@@ -104,7 +106,6 @@ namespace senior_project_web.Controllers
             }
             // 刪除圖片文件
             var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", meal.img_path); 
-            Console.WriteLine("img_path ============================= \n"+imagePath);
             if (System.IO.File.Exists(imagePath))
             {
                 System.IO.File.Delete(imagePath);
@@ -114,6 +115,67 @@ namespace senior_project_web.Controllers
             await _context.SaveChangesAsync();
             TempData["errMsg"] = "成功刪除!";
 
+            return RedirectToAction("Inventory");
+        }
+
+        //編輯Meal
+        [HttpPost]
+        public async Task<IActionResult> EditMeal(Guid meal_id)
+        {
+            var meal = await _context.Meal.Include(m => m.Inventory).FirstOrDefaultAsync(m => m.meal_id == meal_id);
+            if(meal == null)
+            {
+                TempData["errMsg"] = "找無餐點資訊!";
+                return RedirectToAction("Inventory");
+            }
+            return View(meal);
+        }
+        //儲存編輯Meal
+        [HttpPost]
+        public async Task<IActionResult> SaveChange(Guid meal_id, IFormFile img_path, string name, string type, string description, int cost, int price, int quantity)
+        {
+            var meal = await _context.Meal.Include(m => m.Inventory).FirstOrDefaultAsync(m => m.meal_id == meal_id);
+            if (meal == null)
+            {
+                TempData["errMsg"] = "找無餐點資訊!";
+                return RedirectToAction("Inverntory");
+            }
+            //刪除舊圖片
+            if (img_path != null)
+            {
+                var oldImgPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", meal.img_path);
+                if (System.IO.File.Exists(oldImgPath))
+                {
+                    System.IO.File.Delete(oldImgPath);
+                }
+                //重新添加圖片
+                var newUniqueImgPath = Guid.NewGuid() + Path.GetExtension(img_path.FileName);
+                var newPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images", newUniqueImgPath);
+                using (var stream = new FileStream(newPath, FileMode.Create))
+                {
+                    await img_path.CopyToAsync(stream);
+                }
+                //儲存新路徑
+                meal.img_path = "images/" + newUniqueImgPath;
+            }
+            //檢查描述是否為空值
+            if (string.IsNullOrEmpty(description))
+            {
+                //若為空則保留為源字串
+                description = meal.description;
+            }
+            
+            //修改其他資料
+            meal.name = name;
+            meal.type = type;
+            meal.description = description;
+            meal.cost = cost;
+            meal.price = price;
+            meal.Inventory.quantity = quantity;
+            meal.Inventory.update_at = DateTime.Now; //更新時間
+
+            await _context.SaveChangesAsync();
+            TempData["errMsg"] = "修改成功!";
             return RedirectToAction("Inventory");
         }
 
