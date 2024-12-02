@@ -32,3 +32,24 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
     -moz-appearance: textfield;
 }
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two columns */
+    gap: 170px; /* Spacing between grid items */
+    margin-top: 50px;
+}
+
+    .button-grid div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+.custom-hover:hover {
+    background-color: #DE6969; /* Change to your desired background color */
+    color: #fff; /* Change text color on hover */
+    border-color: #000000; /* Optional: Change border color */
+}
+
+
