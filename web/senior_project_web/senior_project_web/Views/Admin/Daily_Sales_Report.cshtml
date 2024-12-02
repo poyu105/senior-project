@@ -12,12 +12,20 @@
 <table class="table table-secondary table-striped table-hover text-center align-middle">
     <thead class="fs-5">
         <tr>
+            <th>
+                <button type="button" class="checkbox-cell d-none btn btn-primary" onclick="toggleSelectAll(this)" value="select-all">全選</button>
+            </th>
             <th>報表ID</th>
             <th>餐點名稱</th>
             <th>售價(NTD)</th>
             <th>銷售量</th>
             <th>銷售額</th>
             <th>新增日期</th>
+            <th>
+                <button class="checkbox-cell btn btn-outline-dark" type="button" onclick="toggleCheckboxes()">批量選取</button>
+                <button class="checkbox-cell d-none btn btn-primary" type="button" onclick="toggleCheckboxes()">取消</button>
+                <button class="checkbox-cell d-none btn btn-danger" type="submit">刪除</button>
+            </th>
         </tr>
     </thead>
     <tbody>
@@ -26,16 +34,57 @@
             {
                 foreach(var reportMeal in report.ReportMeal)
                 {
-                    <tr>
-                        <td>@report.report_id</td>
-                        <td>@reportMeal.Meal.name</td>
-                        <td>@reportMeal.Meal.price</td>
-                        <td>@report.total_quantity</td>
-                        <td>@report.total_sales</td>
-                        <td>@report.date.ToString("yyyy/MM/dd HH:mm:ss")</td>
-                    </tr>
+                                                    <tr onclick="toggleRowCheckbox(this)">
+                                                        <td>
+                                                            <input class="checkbox-cell checkbox d-none" type="checkbox" name="checkbox" value="@report.report_id" />
+                                                        </td>
+                                                        <td>@report.report_id</td>
+                                                        <td>@reportMeal.Meal.name</td>
+                                                        <td>@reportMeal.Meal.price</td>
+                                                        <td>@report.total_quantity</td>
+                                                        <td>@report.total_sales</td>
+                                                        <td>@report.date.ToString("yyyy/MM/dd HH:mm:ss")</td>
+                                                        <td class="fs-5">
+                                                            <div class="d-flex flex-row justify-content-center gap-2">
+                                                                <form method="post" asp-controller="Admin" asp-action="" asp-route-meal_id="">
+                                                                    <button type="submit" class="btn-warning">編輯</button>
+                                                                </form>
+                                                                <form method="post" asp-controller="Admin" asp-action="" asp-route-meal_id="" onsubmit="return confirm('確定刪除這個報表嗎？');">
+                                                                    <button type="submit" class="btn-danger">刪除</button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
                 }
             }
         }
     </tbody>
 </table>
+
+<script>
+    //切換checkbox顯示狀態
+    function toggleCheckboxes() {
+        const checkboxes = document.querySelectorAll('.checkbox-cell');
+        checkboxes.forEach(cell => cell.classList.toggle('d-none'));
+    }
+    //透過點擊row來切換checkbox狀態
+    function toggleRowCheckbox(row){
+        const checkbox = row.querySelector('.checkbox-cell');
+        if (!checkbox.classList.contains('d-none')) {
+            checkbox.checked = !checkbox.checked;
+        }
+    }
+    //切換全選狀態
+    function toggleSelectAll(selectBtn){
+        const checkboxes = document.querySelectorAll('.checkbox');
+        if (selectBtn.value == "select-all") {
+            checkboxes.forEach(checkbox => checkbox.checked = true);
+            selectBtn.value = "deselect-all";
+            selectBtn.textContent = "取消全選";
+        } else {
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+            selectBtn.value = "select-all";
+            selectBtn.textContent = "全選";
+        }
+    }
+</script>
