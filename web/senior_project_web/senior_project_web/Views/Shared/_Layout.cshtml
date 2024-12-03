@@ -14,7 +14,7 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-warning border-bottom box-shadow mb-3 py-4">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-warning border-bottom box-shadow mb-3 py-1">
             <div class="container-fluid">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">senior_project_web</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
@@ -24,19 +24,19 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1 gap-4">
                         <li class="nav-item">
-                            <a class="nav-link text-dark btn btn-secondary btn-light btn-outline-dark fs-3 custom-hover" asp-area="" asp-controller="Home" asp-action="Index">菜單</a>
+                            <a class="nav-link p-2 text-dark bg-white custom-hover rounded" asp-area="" asp-controller="Home" asp-action="Index">菜單</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark btn btn-secondary btn-light btn-outline-dark fs-3 custom-hover" asp-area="" asp-controller="Admin" asp-action="Index">管理員系統</a>
+                            <a class="nav-link p-2 text-dark bg-white custom-hover rounded" asp-area="" asp-controller="Admin" asp-action="Index">管理員系統</a>
                         </li>
                         @{
                             if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark btn btn-secondary btn-light btn-outline-dark fs-3 custom-hover" asp-area="" asp-controller="Admin" asp-action="Inventory">庫存管理</a>
+                                    <a class="nav-link p-2 text-dark bg-white custom-hover rounded" asp-area="" asp-controller="Admin" asp-action="Inventory">庫存管理</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark btn btn-secondary btn-light btn-outline-dark fs-3 custom-hover" asp-area="" asp-controller="Admin" asp-action="Prediction">銷售預測</a>
+                                    <a class="nav-link p-2 text-dark bg-white custom-hover rounded" asp-area="" asp-controller="Admin" asp-action="Prediction">銷售預測</a>
                                 </li>
                             }
                         }
