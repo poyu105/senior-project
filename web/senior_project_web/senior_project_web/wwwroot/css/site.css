@@ -40,14 +40,14 @@ input[type="number"] {
     margin-top: 50px;
 }
 
-    .button-grid div {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+.button-grid div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
 .custom-hover:hover {
-    background-color: #DE6969; /* Change to your desired background color */
+    background-color: #DE6969 !important; /* Change to your desired background color */
     color: #fff; /* Change text color on hover */
     border-color: #000000; /* Optional: Change border color */
 }
