@@ -8,15 +8,23 @@
     <div class="row">
         <!-- Sidebar -->
         <div class="col-md-3">
-            <div class="bg-light p-3 rounded" style="height: 100vh; position: sticky; top: 0;">
-                <h4>篩選選項</h4>
+            <!-- Navbar toggle button -->
+            <button class="btn btn-primary d-md-none mb-3" id="toggle-sidebar">
+                expand
+            </button>
+
+            <!-- Sidebar -->
+            <div class="bg-white p-4 rounded d-none d-md-block" id="sidebar" style="height: 100vh; position: sticky; top: 0;">
                 <div class="d-flex flex-column gap-2">
-                    <button class="btn btn-outline-primary">選項 1</button>
-                    <button class="btn btn-outline-primary">選項 2</button>
-                    <button class="btn btn-outline-primary">選項 3</button>
+                    <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">RECCOMEND</button>
+                    <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">NOODLES</button>
+                    <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">DRINK</button>
+                    <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">TOPPING</button>
+                    <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">OTHER</button>
                 </div>
             </div>
         </div>
+
 
         <!-- Menu -->
         <div class="col-md-9">
@@ -80,6 +88,11 @@
         var totalPrice = mealPrice * quantity;
         showTotalPrice.textContent = totalPrice;
     }
+    // Toggle the visibility
+    document.getElementById('toggle-sidebar').addEventListener('click', function () {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('d-none'); 
+    });
     //處理減少數量
     const handleDecrease = () => {
         if (quantity > 1) {
