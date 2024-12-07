@@ -3,20 +3,20 @@
 @{
     ViewData["Title"] = "菜單";
 }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
         <div class="col-md-3">
             <!-- Navbar toggle button -->
-            <button class="btn btn-primary d-md-none mb-3" id="toggle-sidebar">
-                expand
+            <button class="btn btn-primary d-md-none mb-3 bi bi-chevron-bar-down" id="toggle-sidebar">
             </button>
 
             <!-- Sidebar -->
             <div class="bg-white p-4 rounded d-none d-md-block" id="sidebar" style="height: 100vh; position: sticky; top: 0;">
                 <div class="d-flex flex-column gap-2">
-                    <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">RECCOMEND</button>
+                    <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">RECOMMEND</button>
                     <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">NOODLES</button>
                     <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">DRINK</button>
                     <button class="btn nav-link bg-white p-2 text-dark  custom-hover rounded">TOPPING</button>
@@ -37,7 +37,9 @@
                             <h3 class="card-title">@meal.name</h3>
                             <div class="d-flex flex-row justify-content-between align-items-center gap-2">
                                 <p class="card-text fs-5 m-0">NT$ @meal.price</p>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addToShoppingCart" onclick="updateModalInfo('@meal.meal_id')">加入購物車</button>
+                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addToShoppingCart" onclick="updateModalInfo('@meal.meal_id')">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -62,9 +64,14 @@
                     <p id="price" class="fs-5">NT$ 00</p>
                     <div class="d-flex align-items-center gap-2">
                         <span class="fs-5">請選擇數量</span>
-                        <button type="button" class="btn btn-outline-secondary" onclick="handleDecrease()">-</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="handleDecrease()">
+                            <i class="bi bi-dash"></i>
+                        </button>
                         <input id="quantity" type="number" class="text-center" style="width: 50px;" value="1" min="1" max="100" />
-                        <button type="button" class="btn btn-outline-secondary" onclick="handleIncrease()">+</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="handleIncrease()">
+                            <i class="bi bi-plus"></i>
+                        </button>
+
                         <p class="m-0">總價: NT$<span id="totalPrice"></span></p>
                     </div>
                 </div>
@@ -73,6 +80,7 @@
                     <button type="submit" class="btn btn-primary">加入購物車</button>
                 </div>
             </form>
+
         </div>
     </div>
 </div>
