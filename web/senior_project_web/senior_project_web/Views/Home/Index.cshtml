@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "菜單";
 }
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 
 <div class="container-fluid">
     <div class="row">
@@ -32,7 +31,7 @@
                 @foreach (var meal in Model)
                 {
                     <div class="card">
-                        <img class="img-fluid card-img-top" style="width:250px; height:250px" src="https://localhost:54703/@meal.img_path" />
+                        <img class="img-fluid card-img-top" style="width:250px; height:250px" src="https://localhost:7145/@meal.img_path" />
                         <div class="card-body">
                             <h3 class="card-title">@meal.name</h3>
                             <div class="d-flex flex-row justify-content-between align-items-center gap-2">
@@ -53,7 +52,8 @@
 <div id="addToShoppingCart" class="modal" tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
         <div class="modal-content">
-            <form asp-controller="Home">
+            <form asp-controller="Cart" asp-action="AddCart" method="post">
+                <input id="_meal_id" name="_meal_id" type="hidden" value=""/>
                 <div class="modal-header">
                     <h2 class="modal-title">Meal_Title</h2>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -67,7 +67,7 @@
                         <button type="button" class="btn btn-outline-secondary" onclick="handleDecrease()">
                             <i class="bi bi-dash"></i>
                         </button>
-                        <input id="quantity" type="number" class="text-center" style="width: 50px;" value="1" min="1" max="100" />
+                        <input id="_amount" name="_amount" type="number" class="text-center" style="width: 50px;" value="1" min="1" max="100" />
                         <button type="button" class="btn btn-outline-secondary" onclick="handleIncrease()">
                             <i class="bi bi-plus"></i>
                         </button>
@@ -87,13 +87,13 @@
 
 <script>
     const modal = document.getElementById('addToShoppingCart');
-    let quantity = 1;
-    const showQuantity = document.getElementById('quantity');
+    let amount = 1;
+    const showAmount = document.getElementById('_amount');
     let mealPrice = 0;
     const showTotalPrice = document.getElementById('totalPrice');
     //更新總價
     const updateTotalPrice = () => {
-        var totalPrice = mealPrice * quantity;
+        var totalPrice = mealPrice * amount;
         showTotalPrice.textContent = totalPrice;
     }
     // Toggle the visibility
@@ -103,9 +103,9 @@
     });
     //處理減少數量
     const handleDecrease = () => {
-        if (quantity > 1) {
-            quantity --;
-            showQuantity.value = quantity;
+        if (amount > 1) {
+            amount--;
+            showAmount.value = amount;
             updateTotalPrice();
         }else{
             alert("數量必須大於0!");
@@ -113,22 +113,22 @@
     }
     //處理增加數量
     const handleIncrease = () => {
-        if (quantity < 100) {
-            quantity ++;
-            showQuantity.value = quantity;
+        if (amount < 100) {
+            amount++;
+            showAmount.value = amount;
             updateTotalPrice();
         } else {
             alert("超出訂購上限!");
         }
     }
     // 處理用戶直接輸入數量
-    const handleQuantityInput = () => {
-        const userInput = parseInt(showQuantity.value, 10);
+    const handleAmountInput = () => {
+        const userInput = parseInt(showAmount.value, 10);
         if (userInput <= 0 || userInput > 100) {
             alert("請輸入有效的數量（1-100）");
-            showQuantity.value = quantity;  // 恢復為有效數量
+            showAmount.value = amount;  // 恢復為有效數量
         } else {
-            quantity = userInput;
+            amount = userInput;
             updateTotalPrice();
         }
     };
@@ -145,6 +145,8 @@
             const meal = await response.json();
             mealPrice = meal.price;
             
+            document.getElementById('_meal_id').value = meal.meal_id;
+
             modal.querySelector('.modal-title').textContent = meal.name;
             modal.querySelector('.modal-body img').src = meal.img_path;
             modal.querySelector('#description').textContent = meal.description;
@@ -158,9 +160,9 @@
     };
     // 當modal關閉時，重置數量為1
     modal.addEventListener('hide.bs.modal', () => {
-        quantity = 1;  // 重置數量為預設值
-        showQuantity.value = quantity;  // 更新數量輸入框顯示
+        amount = 1;  // 重置數量為預設值
+        showAmount.value = amount;  // 更新數量輸入框顯示
         updateTotalPrice();  // 更新總價
     });
-    showQuantity.addEventListener('input', handleQuantityInput);
+    showAmount.addEventListener('input', handleAmountInput);
 </script>
