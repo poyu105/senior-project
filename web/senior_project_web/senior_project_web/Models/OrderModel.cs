@@ -21,5 +21,7 @@ namespace senior_project_web.Models
         [Required]
         public string user_id { get; set; }
         public UserModel User { get; set; }
+
+        public ICollection<Order_MealModel> Order_Meal { get; set; }
     }
 }
