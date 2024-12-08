@@ -55,7 +55,7 @@ CREATE TABLE Meal(
 --建立Order_Meal資料表(關聯訂單和商品資訊的中間表)
 CREATE TABLE Order_Meal(
 	order_meal_id INT IDENTITY(1,1) PRIMARY KEY,			--id由1開始遞增1
-	quantity INT,								--訂購數量
+	amount INT,								--訂購數量
 	order_id INT,
 	meal_id UNIQUEIDENTIFIER,
 	FOREIGN KEY (order_id) REFERENCES [Order](order_id),	--order_id外鍵
