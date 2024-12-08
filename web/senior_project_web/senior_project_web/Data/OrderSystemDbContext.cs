@@ -45,6 +45,24 @@ namespace senior_project_web.Data
                           .WithMany(r => r.ReportMeal) // Daily_Sales_ReportModel 中對應的集合
                           .HasForeignKey(rm => rm.report_id) // 外鍵欄位
                 );
+
+            //訂單(Order)和User關聯
+            modelBuilder.Entity<OrderModel>()
+                .HasOne(o => o.User)
+                .WithMany(u => u.Order)
+                .HasForeignKey(o => o.user_id);
+
+            //訂購餐點(Order_Meal)和訂單(Order)關聯
+            modelBuilder.Entity<Order_MealModel>()
+                .HasOne(om => om.Order)
+                .WithMany(o => o.Order_Meal)
+                .HasForeignKey(om => om.order_id);
+
+            //訂購餐點(Order_Meal)和餐點(Meal)關聯
+            modelBuilder.Entity<Order_MealModel>()
+                .HasOne(om => om.Meal)
+                .WithMany(m => m.Order_Meal)
+                .HasForeignKey(om => om.meal_id);
         }
     }
 }
