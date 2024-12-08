@@ -1,0 +1,44 @@
+﻿@model List<CartModel>
+
+@{
+    ViewData["Title"] = "購物車";
+}
+@{
+    if(Model != null)
+    {
+        <table class="table table-secondary table-striped table-hover text-center align-middle">
+            <thead class="fs-5">
+                <tr>
+                    <th>名稱</th>
+                    <th>圖片</th>
+                    <th>類型</th>
+                    <th>描述</th>
+                    <th>訂購數量</th>
+                    <th>價格</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    foreach (var meal in Model)
+                    {
+                        var price = meal.Meal.price * meal.amount;
+                        <tr>
+                            <td>@meal.Meal.name</td>
+                            <td>
+                                <img class="img-fluid" style="width: 100px; height: 100px; object-fit: cover;" src="https://localhost:7145/@meal.Meal.img_path" />
+                            </td>
+                            <td>@meal.Meal.type</td>
+                            <td>@meal.Meal.description</td>
+                            <td>@meal.amount</td>
+                            <td>@price</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>目前沒有任何訂單!</p>
+    }
+}
