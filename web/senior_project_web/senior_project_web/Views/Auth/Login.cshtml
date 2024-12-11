@@ -10,12 +10,19 @@
             <span>@ViewBag.errMsg</span>
         }
     }
-    <label>帳號</label>
-    <input type="text" placeholder="請輸入帳號" asp-for="admin_account"/>
-    <label>密碼</label>
-    <input type="password" placeholder="請輸入密碼" asp-for="password"/>
-    <button type="submit">登入</button>
-    <button>
-        <a asp-controller="Auth" asp-action="Register">註冊</a>
-    </button>
+
+    <div class="d-flex justify-content-center align-items-center">
+        <div class="card p-4 shadow-sm" style="width: 100%; max-width: 400px;">
+            <div class="mb-3">
+                <label for="admin_account" class="form-label">帳號</label>
+                <input type="text" class="form-control" id="admin_account" placeholder="請輸入帳號" asp-for="admin_account" />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">密碼</label>
+                <input type="password" class="form-control" id="password" placeholder="請輸入密碼" asp-for="password" />
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mb-2">登入</button>
+            <a asp-controller="Auth" asp-action="Register" class="btn btn-secondary w-100 text-decoration-none">註冊</a>
+        </div>
+    </div>
 </form>

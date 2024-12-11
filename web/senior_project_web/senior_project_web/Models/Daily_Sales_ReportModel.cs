@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace senior_project_web.Models
 {
@@ -18,7 +19,9 @@ namespace senior_project_web.Models
 
         // FK
         [Required]
-        public string meal_id { get; set; }
-        public MealModel meal { get; set; }
+        [ForeignKey("meal_id")]
+        public Guid meal_id { get; set; }
+        public ICollection<MealModel> Meal { get; set; }
+        public ICollection<ReportMealModel> ReportMeal { get; set; } //中間表操作
     }
 }

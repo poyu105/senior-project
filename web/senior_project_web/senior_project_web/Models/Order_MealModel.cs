@@ -7,16 +7,16 @@ namespace senior_project_web.Models
         [Key]
         public int order_meal_id {  get; set; }
     
-        public int quantity { get; set; }
+        public int amount { get; set; }
 
         //FK
         [Required]
         public int order_id { get; set; }
-        public OrderModel order { get; set; }
+        public OrderModel Order { get; set; }
 
         //FK
         [Required]
-        public string meal_id { get; set; }
+        public Guid meal_id { get; set; }
         public MealModel Meal { get; set; }
     }
 }

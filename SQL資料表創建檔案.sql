@@ -55,7 +55,7 @@ CREATE TABLE Meal(
 --建立Order_Meal資料表(關聯訂單和商品資訊的中間表)
 CREATE TABLE Order_Meal(
 	order_meal_id INT IDENTITY(1,1) PRIMARY KEY,			--id由1開始遞增1
-	quantity INT,								--訂購數量
+	amount INT,								--訂購數量
 	order_id INT,
 	meal_id UNIQUEIDENTIFIER,
 	FOREIGN KEY (order_id) REFERENCES [Order](order_id),	--order_id外鍵
@@ -80,7 +80,15 @@ CREATE TABLE Daily_Sales_Report(
     report_id INT IDENTITY(1,1) PRIMARY KEY,	--報表id由1遞增1
     total_sales INT NOT NULL,					--單一產品銷售額 (整數)
     total_quantity INT NOT NULL,				--單一產品銷售量 (整數)
-    date DATE NOT NULL,							--銷售日期(YYYY-MM-DD)
+    date DATETIME NOT NULL,							--銷售日期(YYYY-MM-DD)
     meal_id UNIQUEIDENTIFIER NOT NULL,
 	FOREIGN KEY (meal_id) REFERENCES Meal(meal_id),			--meal_id外鍵
+);
+-- 建立報表與餐點多對多中間表
+CREATE TABLE ReportMeal(
+    meal_id UNIQUEIDENTIFIER NOT NULL, -- 餐點的外鍵
+    report_id INT NOT NULL,            -- 報表的外鍵
+    PRIMARY KEY (meal_id, report_id),   -- 設置複合主鍵，保證唯一性
+    CONSTRAINT FK_ReportMeal_Meal FOREIGN KEY (meal_id) REFERENCES Meal(meal_id) ON DELETE CASCADE,
+    CONSTRAINT FK_ReportMeal_Report FOREIGN KEY (report_id) REFERENCES Daily_Sales_Report(report_id) ON DELETE CASCADE
 );

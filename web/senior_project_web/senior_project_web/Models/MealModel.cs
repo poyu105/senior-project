@@ -35,5 +35,11 @@ namespace senior_project_web.Models
         [ForeignKey("inventory_id")]
         public Guid inventory_id { get; set; }
         public InventoryModel Inventory { get; set; }
+
+        public ICollection<Daily_Sales_ReportModel> Daily_Sales_Report { get; set; }
+        public ICollection<ReportMealModel> ReportMeal { get; set; } //中間表操作
+
+        //Meal和Order_Meal集合
+        public ICollection<Order_MealModel> Order_Meal { get; set;}
     }
 }

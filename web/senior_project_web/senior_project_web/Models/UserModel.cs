@@ -24,5 +24,8 @@ namespace senior_project_web.Models
         public DateTime update_at { get; set; } = DateTime.Now;
 
         public AdminModel Admin { get; set; }
+
+        //一個User的訂單集合
+        public ICollection<OrderModel> Order { get; set; }
     }
 }

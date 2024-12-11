@@ -24,6 +24,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+//添加Session服務(for 購物車)
+builder.Services.AddSession();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -38,6 +41,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+//添加Session服務(for 購物車)
+app.UseSession();
 
 //登入驗證機制(順序不能顛倒)
 app.UseAuthentication();

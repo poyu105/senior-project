@@ -53,7 +53,7 @@ namespace senior_project_web.Controllers
         {
             if(img_path == null || name == null || type == null || description == null || cost == null || price == null || quantity == null)
             {
-                TempData["errMsg"] = "輸入錯誤，請重新確認!\n"+img_path+name;
+                TempData["errMsg"] = "輸入錯誤，請重新確認!\n";
                 return RedirectToAction("Inventory");
             }
 
@@ -177,6 +177,71 @@ namespace senior_project_web.Controllers
             await _context.SaveChangesAsync();
             TempData["errMsg"] = "修改成功!";
             return RedirectToAction("Inventory");
+        }
+
+        //每日報表
+        [HttpGet]
+        public async Task<IActionResult> Daily_Sales_Report()
+        {
+            var reports = await _context.Daily_Sales_Report.Include(r=>r.ReportMeal).ThenInclude(m=>m.Meal).ToListAsync();
+            ViewBag.ReportsLength = reports.Count();
+            return View(reports);
+        }
+        //新增報表
+        [HttpGet]
+        public async Task<IActionResult> addReport()
+        {
+            var meal = await _context.Meal.ToListAsync();
+            ViewBag.MealLength = meal.Count();
+            return View(meal);
+        }
+        //新增報表(POST)
+        [HttpPost]
+        public async Task<IActionResult> addNewReport(List<Guid> meal_id, List<int> quantity)
+        {
+            // 驗證所有列表長度是否一致
+            if (meal_id.Count != quantity.Count)
+            {
+                TempData["errMsg"] = "提供的資料不完整，請確認所有欄位的資料後再提交!";
+                return RedirectToAction("addReport");
+            }
+            try
+            {
+                for (int i = 0; i < meal_id.Count; i++)
+                {
+                    var meal = await _context.Meal.FirstOrDefaultAsync(m => m.meal_id == meal_id[i]);
+                    if (meal == null)
+                    {
+                        TempData["errMsg"] = $"錯誤的餐點資訊，無法找到餐點ID: {meal_id[i]}";
+                        return View();
+                    }
+                    // 創建新的報表
+                    var report = new Daily_Sales_ReportModel
+                    {
+                        meal_id = meal_id[i],
+                        total_quantity = quantity[i],
+                        total_sales = quantity[i] * meal.price,
+                        date = DateTime.Now
+                    };
+                    await _context.Daily_Sales_Report.AddAsync(report);
+
+                    // 將資料儲存進中間表
+                    var reportMeal = new ReportMealModel
+                    {
+                        meal_id = meal_id[i],
+                        Meal = meal,
+                        report_id = report.report_id,
+                        Report = report
+                    };
+                    await _context.ReportMeal.AddAsync(reportMeal);
+                }
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Daily_Sales_Report");
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, $"伺服器錯誤:{ex.Message}");
+            }
         }
 
         //銷售預測
