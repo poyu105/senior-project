@@ -38,10 +38,12 @@ input[type="number"] {
     -moz-appearance: textfield;
 }
 
+/*_Layout: nav*/
 .custom-hover:hover {
     color: #777777 !important;
 }
 
+/*_Layout: nav*/
 .custom-navbarcolor {
     background-color: #FFFAE7;
 }
