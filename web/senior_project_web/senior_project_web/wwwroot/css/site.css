@@ -10,11 +10,6 @@ html {
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
     box-shadow: none;
-    color: black;
-    background-color: snow !important;
-    border-color: yellow !important;
-    box-shadow: none !important;
-    outline: none;
 }
 
 html {
