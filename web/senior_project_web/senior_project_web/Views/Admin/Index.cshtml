@@ -4,28 +4,24 @@
     ViewData["Title"] = "管理員系統";
 }
 <div class="container text-center">
-    <div class="row gy-3">
+    <div class="row">
         <!-- Left Column -->
         <div class="col-12 col-sm-6">
-            <div>
-                <a class="nav-link text-white fs-5 btn btn-secondary p-3 mb-2 w-75"
-                   asp-controller="Admin" asp-action="Daily_Sales_Report">每日報表</a>
+            <div class="mb-2">
+                <a class="nav-link text-white fs-5 btn btn-secondary p-3" asp-controller="Admin" asp-action="Daily_Sales_Report">每日報表</a>
             </div>
-            <div>
-                <a class="nav-link text-white fs-5 btn btn-secondary p-3 w-75"
-                   asp-controller="Admin" asp-action="Inventory">庫存管理</a>
+            <div class="mb-2">
+                <a class="nav-link text-white fs-5 btn btn-secondary p-3" asp-controller="Admin" asp-action="Inventory">庫存管理</a>
             </div>
         </div>
 
         <!-- Right Column -->
         <div class="col-12 col-sm-6">
-            <div>
-                <a class="nav-link text-white fs-5 btn btn-secondary p-3 mb-2 w-75"
-                   asp-controller="Admin" asp-action="Prediction">銷售預測</a>
+            <div class="mb-2">
+                <a class="nav-link text-white fs-5 btn btn-secondary p-3" asp-controller="Admin" asp-action="Prediction">銷售預測</a>
             </div>
-            <div>
-                <a class="nav-link text-white fs-5 btn btn-secondary p-3 w-75"
-                   asp-controller="Auth" asp-action="Register">新增管理員</a>
+            <div class="mb-2">
+                <a class="nav-link text-white fs-5 btn btn-secondary p-3" asp-controller="Auth" asp-action="Register">新增管理員</a>
             </div>
         </div>
     </div>
