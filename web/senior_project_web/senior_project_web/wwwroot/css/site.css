@@ -41,3 +41,6 @@ input[type="number"] {
     background-color: #FFFAE7;
 }
 
+.custom-login-width {
+    max-width: 400px;
+}
