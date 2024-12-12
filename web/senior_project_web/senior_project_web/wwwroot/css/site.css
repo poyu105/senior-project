@@ -45,4 +45,6 @@ input[type="number"] {
 .custom-navbarcolor {
     background-color: #FFFAE7;
 }
-
+.custom-login-width {
+    max-width: 400px;
+}
