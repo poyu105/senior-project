@@ -1,24 +1,29 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: none;
+    box-shadow: none;
+    color: black;
+    background-color: snow !important;
+    border-color: yellow !important;
+    box-shadow: none !important;
+    outline: none;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
 }
 
 /* 隱藏數字輸入框旁邊的按鈕 */
@@ -41,6 +46,3 @@ input[type="number"] {
     background-color: #FFFAE7;
 }
 
-.custom-login-width {
-    max-width: 400px;
-}
