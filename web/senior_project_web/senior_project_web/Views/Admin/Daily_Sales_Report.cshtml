@@ -46,10 +46,10 @@
                                                         <td>@report.date.ToString("yyyy/MM/dd HH:mm:ss")</td>
                                                         <td class="fs-5">
                                                             <div class="d-flex flex-row justify-content-center gap-2">
-                                                                <form method="post" asp-controller="Admin" asp-action="" asp-route-meal_id="">
+                                                                <form method="post">
                                                                     <button type="submit" class="btn-warning">編輯</button>
                                                                 </form>
-                                                                <form method="post" asp-controller="Admin" asp-action="" asp-route-meal_id="" onsubmit="return confirm('確定刪除這個報表嗎？');">
+                                                                <form method="post" asp-controller="Admin" asp-action="delReport" asp-route-rm_id="@reportMeal.rm_id" onsubmit="return confirm('確定刪除這個報表嗎？');">
                                                                     <button type="submit" class="btn-danger">刪除</button>
                                                                 </form>
                                                             </div>
