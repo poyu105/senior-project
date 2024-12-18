@@ -228,6 +228,7 @@ namespace senior_project_web.Controllers
                     // 將資料儲存進中間表
                     var reportMeal = new ReportMealModel
                     {
+                        rm_id = Guid.NewGuid(),
                         meal_id = meal_id[i],
                         Meal = meal,
                         report_id = report.report_id,
@@ -236,6 +237,36 @@ namespace senior_project_web.Controllers
                     await _context.ReportMeal.AddAsync(reportMeal);
                 }
                 await _context.SaveChangesAsync();
+                return RedirectToAction("Daily_Sales_Report");
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, $"伺服器錯誤:{ex.Message}");
+            }
+        }
+
+        //刪除報表
+        [HttpPost]
+        public async Task<IActionResult> delReport(Guid rm_id)
+        {
+            try
+            {
+                //查找中間表
+                var rm = await _context.ReportMeal.FindAsync(rm_id);
+                if(rm == null)
+                {
+                    throw new ArgumentException("找不到對應的關聯表!");
+                }
+                //查找中間表對應的每日報表
+                var report = await _context.Daily_Sales_Report.FindAsync(rm.report_id);
+                if(report == null)
+                {
+                    throw new ArgumentException("找不到對應的報表!");
+                }
+                _context.Daily_Sales_Report.Remove(report);
+                _context.ReportMeal.Remove(rm);
+                await _context.SaveChangesAsync();
+                TempData["errMsg"] = "修改成功!";
                 return RedirectToAction("Daily_Sales_Report");
             }
             catch(Exception ex)
