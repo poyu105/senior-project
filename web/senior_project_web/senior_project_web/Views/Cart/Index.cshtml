@@ -15,6 +15,7 @@
                     <th>描述</th>
                     <th>訂購數量</th>
                     <th>價格</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -31,6 +32,16 @@
                             <td>@meal.Meal.description</td>
                             <td>@meal.amount</td>
                             <td>@price</td>
+                            <td class="fs-5">
+                                <div class="d-flex flex-row justify-content-center gap-2">
+                                    <form method="post">
+                                        <button type="submit" class="btn-warning">編輯</button>
+                                    </form>
+                                    <form method="post" asp-controller="Cart" asp-action="delMeal" asp-route-meal_id="@meal.meal_id" onsubmit="return confirm('確定刪除嗎？');">
+                                        <button type="submit" class="btn-danger">刪除</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     }
                 }
