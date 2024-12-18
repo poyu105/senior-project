@@ -24,6 +24,8 @@ namespace senior_project_web.Controllers
             return View(cartItems);
         }
 
+        //新增至購物車
+
         [HttpPost]
         public async Task<IActionResult> AddCart(Guid _meal_id, int _amount)
         {
@@ -76,6 +78,29 @@ namespace senior_project_web.Controllers
             }
 
             return RedirectToAction("Index", "Home");
+        }
+
+        //刪除購物車中的餐點
+        [HttpPost]
+        public async Task<IActionResult> delMeal(Guid meal_id)
+        {
+            try
+            {
+                var cart = HttpContext.Session.GetObjectFromJson<List<CartModel>>("cart");
+                var item = cart.FirstOrDefault(c => c.meal_id == meal_id);
+                if (item == null)
+                {
+                    throw new ArgumentException("購物車中無此餐點!");
+                }
+                cart.Remove(item);
+                HttpContext.Session.SetObjectAsJson("cart", cart);
+                TempData["errMsg"] = "成功刪除餐點: " + item.Meal.name;
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"伺服器錯誤:{ex.Message}");
+            }
         }
     }
 }
