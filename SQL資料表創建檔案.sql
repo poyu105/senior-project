@@ -86,9 +86,9 @@ CREATE TABLE Daily_Sales_Report(
 );
 -- 建立報表與餐點多對多中間表
 CREATE TABLE ReportMeal(
+	rm_id UNIQUEIDENTIFIER PRIMARY KEY, --由C#的Guid自動生成並帶進資料庫
     meal_id UNIQUEIDENTIFIER NOT NULL, -- 餐點的外鍵
     report_id INT NOT NULL,            -- 報表的外鍵
-    PRIMARY KEY (meal_id, report_id),   -- 設置複合主鍵，保證唯一性
-    CONSTRAINT FK_ReportMeal_Meal FOREIGN KEY (meal_id) REFERENCES Meal(meal_id) ON DELETE CASCADE,
-    CONSTRAINT FK_ReportMeal_Report FOREIGN KEY (report_id) REFERENCES Daily_Sales_Report(report_id) ON DELETE CASCADE
+    FOREIGN KEY (meal_id) REFERENCES Meal(meal_id),		--meal_id外鍵
+    FOREIGN KEY (report_id) REFERENCES Daily_Sales_Report(report_id),	--report_id外鍵
 );
