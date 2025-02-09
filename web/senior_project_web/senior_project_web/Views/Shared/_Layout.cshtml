@@ -1,6 +1,7 @@
 ﻿@using System.Security.Claims
 @{
     var errMsg = TempData["errMsg"] != null ? Uri.EscapeDataString(TempData["errMsg"].ToString()) : null;
+    var successMsg = TempData["successMsg"] != null ? Uri.EscapeDataString(TempData["SuccessMsg"].ToString()) : null;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -65,9 +66,15 @@
         </div>
     </footer>
     <script>
+        //錯誤訊息
         var errMsg = '@errMsg';
         if (errMsg) {
             alert(decodeURIComponent(errMsg));
+        }
+        //成功訊息
+        var successMsg = `@successMsg`;
+        if (successMsg) {
+            alert(decodeURIComponent(successMsg));
         }
     </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
