@@ -135,17 +135,31 @@ namespace senior_project_web.Controllers
         }
 
         //編輯購物車中餐點
-        /*[HttpPost]
-        public async Task<IActionResult> editMeal(Guid meal_id)
+        [HttpPost]
+        public async Task<IActionResult> editMeal(string meal_id, int edAmount)
         {
             try
             {
+                Guid id = Guid.Parse(meal_id);
                 var cart = HttpContext.Session.GetObjectFromJson<List<CartModel>>("cart");
+                var item = cart.FirstOrDefault(c => c.Meal.meal_id == id);
+                if( item == null )
+                {
+                    throw new ArgumentException("購物車中無此餐點!");
+                }
+                //更新餐點數量
+                item.amount = edAmount;
+                //重新儲存至Session
+                HttpContext.Session.SetObjectAsJson("cart", cart);
 
-            }catch(Exception ex)
-            {
-
+                TempData["SuccessMsg"] = "購物車已更新!";
+                return RedirectToAction("Index", "Cart");
             }
-        }*/
+            catch(Exception ex)
+            {
+                TempData["errMsg"] = "發生錯誤: " + ex.Message;
+                return StatusCode(500, $"伺服器錯誤:{ex.Message}");
+            }
+        }
     }
 }
