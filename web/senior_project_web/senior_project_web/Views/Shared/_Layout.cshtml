@@ -1,6 +1,7 @@
 ﻿@using System.Security.Claims
 @{
     var errMsg = TempData["errMsg"] != null ? Uri.EscapeDataString(TempData["errMsg"].ToString()) : null;
+    var successMsg = TempData["successMsg"] != null ? Uri.EscapeDataString(TempData["SuccessMsg"].ToString()) : null;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -39,7 +40,7 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="px-5 w-100">
         <main role="main" class="pb-3">
             <div class="d-flex justify-content-between align-items-baseline border-bottom mb-3 pb-2">
                 <h1 class="m-0">@ViewData["Title"]</h1>
@@ -65,9 +66,15 @@
         </div>
     </footer>
     <script>
+        //錯誤訊息
         var errMsg = '@errMsg';
         if (errMsg) {
             alert(decodeURIComponent(errMsg));
+        }
+        //成功訊息
+        var successMsg = `@successMsg`;
+        if (successMsg) {
+            alert(decodeURIComponent(successMsg));
         }
     </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

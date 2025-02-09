@@ -24,6 +24,8 @@ namespace senior_project_web.Controllers
             return View(cartItems);
         }
 
+        //新增至購物車
+
         [HttpPost]
         public async Task<IActionResult> AddCart(Guid _meal_id, int _amount)
         {
@@ -76,6 +78,88 @@ namespace senior_project_web.Controllers
             }
 
             return RedirectToAction("Index", "Home");
+        }
+
+        //刪除購物車中的餐點
+        [HttpPost]
+        public async Task<IActionResult> delMeal(Guid meal_id)
+        {
+            try
+            {
+                var cart = HttpContext.Session.GetObjectFromJson<List<CartModel>>("cart");
+                var item = cart.FirstOrDefault(c => c.Meal.meal_id == meal_id);
+                if (item == null)
+                {
+                    throw new ArgumentException("購物車中無此餐點!");
+                }
+                cart.Remove(item);
+                HttpContext.Session.SetObjectAsJson("cart", cart);
+                TempData["errMsg"] = "成功刪除餐點: " + item.Meal.name;
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"伺服器錯誤:{ex.Message}");
+            }
+        }
+
+        //取得購物車中餐點資訊
+        [HttpGet]
+        public IActionResult getMealDetail(string meal_id)
+        {
+            try
+            {
+                Guid id = Guid.Parse(meal_id);
+                var cart = HttpContext.Session.GetObjectFromJson<List<CartModel>>("cart");
+                var item = cart.FirstOrDefault(c => c.Meal.meal_id == id);
+                if(item == null)
+                {
+                    throw new ArgumentException("購物車中找無此餐點!");
+                }
+                return Json(new
+                {
+                    meal_id = item.meal_id,
+                    name = item.Meal.name,
+                    amount = item.amount,
+                    type = item.Meal.type,
+                    description = item.Meal.description,
+                    price = item.Meal.price,
+                    img_path = item.Meal.img_path,
+                });
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, $"伺服器錯誤:{ex.Message}");
+            }
+
+        }
+
+        //編輯購物車中餐點
+        [HttpPost]
+        public async Task<IActionResult> editMeal(string meal_id, int edAmount)
+        {
+            try
+            {
+                Guid id = Guid.Parse(meal_id);
+                var cart = HttpContext.Session.GetObjectFromJson<List<CartModel>>("cart");
+                var item = cart.FirstOrDefault(c => c.Meal.meal_id == id);
+                if( item == null )
+                {
+                    throw new ArgumentException("購物車中無此餐點!");
+                }
+                //更新餐點數量
+                item.amount = edAmount;
+                //重新儲存至Session
+                HttpContext.Session.SetObjectAsJson("cart", cart);
+
+                TempData["SuccessMsg"] = "購物車已更新!";
+                return RedirectToAction("Index", "Cart");
+            }
+            catch(Exception ex)
+            {
+                TempData["errMsg"] = "發生錯誤: " + ex.Message;
+                return StatusCode(500, $"伺服器錯誤:{ex.Message}");
+            }
         }
     }
 }
