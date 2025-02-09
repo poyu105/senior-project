@@ -6,54 +6,54 @@
 @{
     if (Model != null && Model.Count > 0)
     {
-            <table class="table table-secondary table-striped table-hover text-center align-middle">
-                <thead class="fs-5">
-                    <tr>
-                        <th>名稱</th>
-                        <th>圖片</th>
-                        <th>類型</th>
-                        <th>描述</th>
-                        <th>訂購數量</th>
-                        <th>價格</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @{
+        <table class="table table-secondary table-striped table-hover text-center align-middle">
+            <thead class="fs-5">
+                <tr>
+                    <th>名稱</th>
+                    <th>圖片</th>
+                    <th>類型</th>
+                    <th>描述</th>
+                    <th>訂購數量</th>
+                    <th>價格</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
                     foreach (var meal in Model)
                     {
                         var price = meal.Meal.price * meal.amount;
-                                <tr>
-                                    <td>@meal.Meal.name</td>
-                                    <td>
-                                        <img class="img-fluid" style="width: 100px; height: 100px; object-fit: cover;" src="https://localhost:7145/@meal.Meal.img_path" />
-                                    </td>
-                                    <td>@meal.Meal.type</td>
-                                    <td>@meal.Meal.description</td>
-                                    <td>@meal.amount</td>
-                                    <td>@price</td>
-                                    <td class="fs-5">
-                                        <div class="d-flex flex-row justify-content-center gap-2">
-                                            <button type="button" class="btn-warning" data-bs-toggle="modal" data-bs-target="#editCartModal" onclick="editCart('@meal.Meal.meal_id.ToString()')">編輯</button>
-                                            <form method="post" asp-controller="Cart" asp-action="delMeal" asp-route-meal_id="@meal.Meal.meal_id" onsubmit="return confirm('確定刪除嗎？');">
-                                                <button type="submit" class="btn-danger">刪除</button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
+                        <tr>
+                            <td>@meal.Meal.name</td>
+                            <td>
+                                <img class="img-fluid" style="width: 100px; height: 100px; object-fit: cover;" src="https://localhost:7145/@meal.Meal.img_path" />
+                            </td>
+                            <td>@meal.Meal.type</td>
+                            <td>@meal.Meal.description</td>
+                            <td>@meal.amount</td>
+                            <td>@price</td>
+                            <td class="fs-5">
+                                <div class="d-flex flex-row justify-content-center gap-2">
+                                    <button type="button" class="btn-warning" data-bs-toggle="modal" data-bs-target="#editCartModal" onclick="editCart('@meal.Meal.meal_id.ToString()')">編輯</button>
+                                    <form method="post" asp-controller="Cart" asp-action="delMeal" asp-route-meal_id="@meal.Meal.meal_id" onsubmit="return confirm('確定刪除嗎？');">
+                                        <button type="submit" class="btn-danger">刪除</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
                     }
-                    }
-                </tbody>
-            </table>
+                }
+            </tbody>
+        </table>
     }
     else
     {
-            <p>目前沒有任何訂單!</p>
+        <p>目前沒有任何訂單!</p>
     }
 }
 <!--編輯購物車餐點 Modal -->
 <div class="modal fade" id="editCartModal" tabindex="-1" aria-labelledby="editCartModalLabel" aria-hidden="true">
-    <form class="modal-dialog">
+    <form id="editCartForm" method="post" asp-controller="Cart" asp-action="editMeal" class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h1 class="modal-title fs-4" id="editCartModalLabel">Modal Title</h1>
@@ -76,7 +76,7 @@
                     <button type="button" class="btn btn-outline-secondary" onclick="handleDecrease()">
                         <i class="bi bi-dash"></i>
                     </button>
-                    <input id="ed-amount" type="number" class="text-center" style="width: 50px;" value="" min="1" max="100" />
+                    <input id="ed-amount" name="edAmount" type="number" class="text-center" style="width: 50px;" value="" min="1" max="100" />
                     <button type="button" class="btn btn-outline-secondary" onclick="handleIncrease()">
                         <i class="bi bi-plus"></i>
                     </button>
@@ -92,6 +92,12 @@
     </form>
 </div>
 <script>
+    let amount = 1; //global數量
+    let totalPrice = 0; //global餐點總價
+    let price = 0; //global餐點單價
+    const showAmount = document.getElementById('ed-amount'); //獲取編輯modal的數量選擇器
+    const showTotalPrice = document.getElementById('ed-totalPrice'); //獲取編輯modal的餐點總價選擇器
+    //點擊編輯按鈕後從後端獲取資料渲染modal
     function editCart(meal_id){
         fetch(`/Cart/getMealDetail?meal_id=${meal_id}`)
         .then(response=>response.json())
@@ -102,6 +108,8 @@
             }
             //modal標題
             document.getElementById('editCartModalLabel').innerText = `修改訂單: ${data.name}`;
+            //modal圖片
+            document.getElementById('ed-img').src = data.img_path;
             //modal類型
             document.getElementById('ed-type').innerText = data.type;
             //modal描述
@@ -112,6 +120,53 @@
             document.getElementById('ed-amount').value = data.amount;
             //modal總價
             document.getElementById('ed-totalPrice').innerText = data.amount * data.price;
+
+            //替換餐點數量
+            amount = data.amount;
+            //替換餐點總價
+            totalPrice = data.amount * data.price;
+            //替換餐點單價
+            price = data.price;
+
+            //動態更新modal中form的action(用以更新meal_id以傳遞至後端)
+            document.getElementById('editCartForm').setAttribute('action', `/Cart/editMeal?meal_id=${meal_id}`);
         })
     }
+    //處理渲染總價
+    const updateTotalPrice = () => {
+        showTotalPrice.innerText = amount * price;
+    }
+    //處理減少餐點數量
+    const handleDecrease = () => {
+        if (amount > 1) {
+            amount--;
+            showAmount.value = amount;
+            updateTotalPrice();
+        }else{
+            alert("數量必須大於0!");
+        }
+    }
+    //處理增加餐點數量
+    const handleIncrease = () => {
+        if (amount < 100) {
+            amount++;
+            showAmount.value = amount;
+            updateTotalPrice();
+        } else {
+            alert("數量必須小於100!");
+        }
+    }
+    //處理直接輸入
+    const handleAmountInput = () => {
+        const intputAmount = showAmount.value;
+        if (intputAmount <= 0 || intputAmount > 100) {
+            alert("請輸入有效的數量（1-100）");
+            showAmount.value = amount;  // 恢復為有效數量
+        } else {
+            amount = intputAmount;
+            updateTotalPrice();
+        }
+    }
+    //添加編輯modal餐點數量監聽器
+    showAmount.addEventListener('input', handleAmountInput);
 </script>
