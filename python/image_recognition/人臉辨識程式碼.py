@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import os
+import pandas as pd
 import json
 from scipy.spatial.distance import cosine
 from PIL import Image
@@ -30,7 +31,7 @@ class FaceTracker:
                  similarity_threshold=0.8,
                  max_features=20,
                  distance_threshold=0.3,
-                 storage_path='face_database.json'):
+                 storage_path='face_database.xlsx'):
         self.similarity_threshold = similarity_threshold
         self.max_features = max_features
         self.distance_threshold = distance_threshold
@@ -38,32 +39,35 @@ class FaceTracker:
         self.known_faces = self.load_face_database()
 
     def load_face_database(self):
-        """載入人臉數據庫"""
+        """從 Excel 載入人臉數據庫"""
+        if not os.path.exists(self.storage_path):
+            print("Excel 人臉數據庫不存在，將初始化新數據庫。")
+            return {}
+
         try:
-            if os.path.exists(self.storage_path):
-                with open(self.storage_path, 'r') as f:
-                    content = f.read().strip()
-                    if not content:  # 如果文件為空
-                        print("人臉數據庫為空，將初始化新數據庫。")
-                        return {}
-                    data = json.loads(content)
-                    for person_id, info in data.items():
-                        info['features'] = [np.array(feat) for feat in info['features']]
-                    return data
-        except (json.JSONDecodeError, Exception) as e:
-            print(f"載入人臉數據庫時出錯: {e}，將初始化新數據庫。")
-        return {}
+            df = pd.read_excel(self.storage_path)
+            known_faces = {}
+            for _, row in df.iterrows():
+                person_id = row['ID']
+                features = np.array(json.loads(row['Features']))  # 轉回 NumPy 陣列
+                known_faces[person_id] = {
+                    'features': [features],
+                    'last_seen': row['Last Seen']
+                }
+            return known_faces
+        except Exception as e:
+            print(f"載入 Excel 時發生錯誤: {e}，將初始化新數據庫。")
+            return {}
 
     def save_face_database(self):
-        """保存人臉數據庫"""
-        data = {}
+        """保存人臉數據庫到 Excel"""
+        data = []
         for person_id, info in self.known_faces.items():
-            data[person_id] = {
-                'features': [feat.tolist() for feat in info['features']],
-                'last_seen': info['last_seen']
-            }
-        with open(self.storage_path, 'w') as f:
-            json.dump(data, f)
+            feature_str = json.dumps(info['features'][0].tolist())  # 轉換為 JSON 格式
+            data.append([person_id, feature_str, info['last_seen']])
+
+        df = pd.DataFrame(data, columns=['ID', 'Features', 'Last Seen'])
+        df.to_excel(self.storage_path, index=False)
 
     def extract_features(self, face_img):
         """提取人臉特徵"""
