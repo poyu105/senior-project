@@ -7,7 +7,9 @@
     @{
         if (ViewBag.errMsg != null)
         {
-            <span>@ViewBag.errMsg</span>
+            <div class="bg-danger bg-opacity-25 p-2 mb-2 rounded">
+                <span class="text-danger fw-bold fs-5">@ViewBag.errMsg</span>
+            </div>
         }
     }
 
@@ -26,3 +28,51 @@
         </div>
     </div>
 </form>
+
+<div class="col-3 p-2 border-1 border-dark border">
+    <p class="text-center fw-bold fs-5">臉部辨識手動登入測試區</p>
+    <div class="mb-2">
+        <label for="face-id" class="form-label">臉部辨識Id:</label>
+        <input id="face-id" type="text" placeholder="UserId" class="form-control" />
+    </div>
+    <button id="faceLogin" onclick="faceLogin()" type="button" class="btn btn-primary w-100">登入</button>
+
+    <!-- 錯誤訊息顯示區域 -->
+    <div id="faceLoginError" class="mt-2 text-danger"></div>
+</div>
+
+<script>
+    async function faceLogin() {
+        const faceIdInput = document.getElementById('face-id');
+        const faceId = faceIdInput.value.trim();
+        const errorMsgElement = document.getElementById('faceLoginError');
+        errorMsgElement.textContent = ''; // 清空錯誤訊息
+
+        if (!faceId) {
+            errorMsgElement.textContent = '請輸入臉部辨識ID';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/account/face-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ FaceId: faceId })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert(`登入成功，歡迎 ${data.user.username}`);
+                window.location.href = '/Home/Index'; // 導向首頁
+            } else {
+                errorMsgElement.textContent = data.message || '登入失敗，請重試';
+            }
+        } catch (error) {
+            console.error('登入請求失敗:', error);
+            errorMsgElement.textContent = '系統錯誤，請稍後再試';
+        }
+    }
+</script>
