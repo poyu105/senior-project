@@ -1,0 +1,57 @@
+﻿@{
+    ViewData["Title"] = "用戶登入";
+}
+<div class="d-flex justify-content-center">
+    <form class="col-5 text-center border border-1 rounded p-4 needs-validation" novalidate>
+        <p class="text-center fw-bold fs-5">臉部辨識手動登入測試區</p>
+        <div class="text-start mb-2">
+            <label for="face-id" class="form-label">臉部辨識Id:</label>
+            <input id="face-id" type="text" placeholder="UserId" class="form-control" required />
+            <span class="invalid-feedback">請輸入人臉Id</span>
+        </div>
+        <div>
+            <button onclick="handleLogin()" type="submit" class="btn btn-primary">登入</button>
+            <button onclick="resetValidation()" type="reset" class="btn btn-outline-secondary">重置</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    //提交表單
+    function handleLogin() {
+        runValidation(); // 先執行表單驗證
+
+        // 檢查表單是否有效
+        const form = document.querySelector('.needs-validation');
+        if (form.checkValidity()) {
+            faceLogin(); // 表單驗證成功時執行登入
+        }
+    }
+
+    //人臉辨識登入
+    async function faceLogin() {
+        const faceIdInput = document.getElementById('face-id');
+        const faceId = faceIdInput.value.trim();
+
+        try {
+            const response = await fetch('/api/account/face-login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ FaceId: faceId })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert(`登入成功，歡迎 ${data.user.username}`);
+                window.location.href = data.redirectTo; // 導向首頁
+            } else if (data.redirectTo) {
+                window.location.href = data.redirectTo;
+            }
+        } catch (error) {
+            console.error('登入請求失敗:', error);
+        }
+    }
+</script>
