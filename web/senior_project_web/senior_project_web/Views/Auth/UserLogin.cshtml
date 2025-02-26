@@ -10,7 +10,7 @@
             <span class="invalid-feedback">請輸入人臉Id</span>
         </div>
         <div>
-            <button onclick="handleLogin()" type="submit" class="btn btn-primary">登入</button>
+            <button onclick="handleLogin(event)" type="submit" class="btn btn-primary">登入</button>
             <button onclick="resetValidation()" type="reset" class="btn btn-outline-secondary">重置</button>
         </div>
     </form>
@@ -18,12 +18,13 @@
 
 <script>
     //提交表單
-    function handleLogin() {
+    function handleLogin(e) {
         runValidation(); // 先執行表單驗證
 
         // 檢查表單是否有效
         const form = document.querySelector('.needs-validation');
         if (form.checkValidity()) {
+            e.preventDefault();
             faceLogin(); // 表單驗證成功時執行登入
         }
     }
