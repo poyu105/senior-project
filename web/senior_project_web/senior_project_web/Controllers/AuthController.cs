@@ -25,25 +25,24 @@ namespace senior_project_web.Controllers
         }
         //管理員登入方法
         [HttpPost]
-        public async Task<IActionResult> AdminLogin(int admin_account, string password)
+        public async Task<IActionResult> AdminLogin([FromBody] AdminModel request)
         {
             //從資料庫找尋是否有admin帳號存在
-            var user = await _context.Admin.Include(a => a.User).FirstOrDefaultAsync(u => u.admin_account == admin_account);
+            var user = await _context.Admin.Include(a => a.User).FirstOrDefaultAsync(u => u.admin_account == request.admin_account);
+            
             if (user == null)
             {
-                ViewBag.errMsg = "帳號或密碼錯誤!";
-                return View();
+                return NotFound(new { success = false, message = "帳號或密碼錯誤!" });
             }
 
             //比對密碼是否正確
-            if (!BCrypt.Net.BCrypt.Verify(password, user.password))
+            if (!BCrypt.Net.BCrypt.Verify(request.password, user.password))
             {
-                ViewBag.errMsg = "帳號或密碼錯誤!";
-                return View();
+                return NotFound(new { success = false, message = "帳號或密碼錯誤!" });
             }
 
             //將帳號轉為String
-            var account = admin_account.ToString();
+            var account = request.admin_account.ToString();
             var id = user.admin_id.ToString();
 
             //登入成功，建立Cookie
@@ -67,7 +66,7 @@ namespace senior_project_web.Controllers
             //使用SignInAsync登入並建立Cookie
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsprincipal, authProperties);
 
-            return RedirectToAction("Index","Admin");
+            return Ok(new { success = true, message = "成功登入!", redirectTo = "/Admin/Index" });
         }
         //管理員註冊頁面
         [HttpGet]
