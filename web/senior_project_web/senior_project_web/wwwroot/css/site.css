@@ -19,6 +19,7 @@ html {
 
 body {
     margin-bottom: 60px;
+    background-color: #FAFAFA;
 }
 
 /* 隱藏數字輸入框旁邊的按鈕 */
@@ -41,4 +42,35 @@ input[type="number"] {
 /*_Layout: nav*/
 .custom-navbarcolor {
     background-color: #FFFAE7;
+}
+
+/*主頁sidebar*/
+.custom-sidebarcolor {
+    background-color: #F4F1F3;
+}
+/*sidebar下選項*/
+.custom-sidebarcolor #sidebar .btn {
+    color: #271E24;
+    background-color: #D5CAD2;
+}
+.custom-sidebarcolor #sidebar .btn:hover {
+    color: #F9F8F9 !important;
+    background-color: #B7A3B0;
+}
+.custom-sidebarcolor #sidebar .btn:active {
+    color: #F9F8F9 !important;
+    background-color: #987C8F;
+}
+/*主頁mealcard樣式*/
+.mealcard:hover {
+    transform: translateY(-3px);
+    transition-duration: .3s;
+    box-shadow: 0px 0px 5px black;
+    cursor: pointer;
+}
+
+/*主頁card父層容器排版*/
+.card-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(12rem, 1fr));
 }
