@@ -6,28 +6,29 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-2 position-sticky top-0 mb-3 p-0 bg-secondary bg-opacity-50 h-100 rounded">
+        <div class="col-md-2 position-sticky top-0 mb-3 p-0 custom-sidebarcolor h-100 rounded">
             <!-- Navbar toggle button -->
             <button class="btn w-100 d-md-none text-black rounded-0" id="toggle-sidebar">MENU</button>
 
             <!-- Sidebar -->
             <div class="p-3 d-none d-md-block" id="sidebar">
                 <div class="d-flex flex-column gap-2">
-                    <button class="btn nav-link bg-white p-2 text-dark custom-hover rounded">推薦餐點</button>
-                    <button class="btn nav-link bg-white p-2 text-dark custom-hover rounded">泡麵</button>
-                    <button class="btn nav-link bg-white p-2 text-dark custom-hover rounded">飲料</button>
-                    <button class="btn nav-link bg-white p-2 text-dark custom-hover rounded">TOPPING</button>
-                    <button class="btn nav-link bg-white p-2 text-dark custom-hover rounded">OTHER</button>
+                    <button class="btn nav-link p-2 rounded" onclick="changeSelectMenu('recommend')">推薦餐點</button>
+                    <button class="btn nav-link p-2 rounded" onclick="changeSelectMenu('noodle')">泡麵</button>
+                    <button class="btn nav-link p-2 rounded" onclick="changeSelectMenu('drink')">飲料</button>
+                    <button class="btn nav-link p-2 rounded" onclick="changeSelectMenu('topping')">TOPPING</button>
+                    <button class="btn nav-link p-2 rounded" onclick="changeSelectMenu('other')">OTHER</button>
+                    <button class="btn nav-link p-2 rounded" onclick="changeSelectMenu('all')">顯示全部</button>
                 </div>
             </div>
         </div>
-        <div class="col-md-9 container">
+        <div class="col-md-10">
             <!-- Menu -->
-            <div class="row row-cols-auto gap-1">
+            <div class="card-content gap-1">
                 @foreach (var meal in Model)
                 {
-                    <div class="card col p-0">
-                        <img class="img-fluid card-img-to" style="width:200px; height:200px" src="https://localhost:7145/@meal.img_path" />
+                    <div class="mealcard card p-0" data-type="@meal.type" data-mealid="@meal.meal_id" data-bs-toggle="modal" data-bs-target="#addToShoppingCart">
+                        <img class="img-fluid card-img-to" style="width:230px; height:200px" src="https://localhost:7145/@meal.img_path" />
                         <div class="card-body">
                             <h3 class="card-title">@meal.name</h3>
                             <div class="d-flex flex-row justify-content-between align-items-center gap-2">
@@ -84,6 +85,30 @@
 </div>
 
 <script>
+    //
+    //增加點擊mealcard(餐點卡片)顯示modal監聽器
+    document.querySelectorAll('.mealcard').forEach((card) => {
+        card.addEventListener('click', () => {
+            updateModalInfo(card.getAttribute('data-mealid'));
+        });
+    });
+
+    //
+    //處理選取類型sidebar
+    function changeSelectMenu(type) {
+        document.querySelectorAll('.mealcard').forEach(card => {
+            const mealType = card.getAttribute('data-type'); //取得每個card的data-type(餐點類型)\
+            card.style.display = (mealType == type || type == 'all' ? 'block' : 'none');
+        })
+    }
+    //
+    // Toggle the visibility
+    document.getElementById('toggle-sidebar').addEventListener('click', function () {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('d-none');
+    });
+    //
+    //定義modal中功能
     const modal = document.getElementById('addToShoppingCart');
     let amount = 1;
     const showAmount = document.getElementById('_amount');
@@ -94,11 +119,8 @@
         var totalPrice = mealPrice * amount;
         showTotalPrice.textContent = totalPrice;
     }
-    // Toggle the visibility
-    document.getElementById('toggle-sidebar').addEventListener('click', function () {
-        const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('d-none');
-    });
+    //
+    //處理選擇數量
     //處理減少數量
     const handleDecrease = () => {
         if (amount > 1) {
@@ -130,6 +152,8 @@
             updateTotalPrice();
         }
     };
+    //
+    //處理modal資訊
     //更新對應modal的資料
     const updateModalInfo = async (_meal_id) => {
         try {
