@@ -14,11 +14,10 @@ CREATE TABLE [User](
 CREATE TABLE Admin(
 	admin_id UNIQUEIDENTIFIER PRIMARY KEY,					--由SQL SERVER的Guid自動生成
 	admin_account INT IDENTITY(1000,1) NOT NULL,		--管理員帳號，由1000自動遞增1
+	username VARCHAR(255) NOT NULL,						--管理員名稱
 	password VARCHAR(255) NOT NULL,						--密碼
 	create_at DATETIME DEFAULT GETDATE(),				--資料創建時間(自動生成)
 	update_at DATETIME DEFAULT GETDATE(),				--資料更新時間(自動生成)
-	user_id VARCHAR(64) NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES [User](user_id)	--user_id外鍵
 );
 
 --建立Order資料表(顧客訂單)
