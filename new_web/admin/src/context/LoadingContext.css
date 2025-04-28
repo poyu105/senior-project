@@ -1,0 +1,18 @@
+/* 定義送出表單後載入動畫效果(dots) */
+.dots::after {
+    content: "";
+    animation: dotAnimation 1.5s infinite steps(1);
+}
+
+/* 定義點點動畫 */
+@keyframes dotAnimation {
+    0% {
+        content: ".";
+    }
+    33% {
+        content: "..";
+    }
+    66% {
+        content: "...";
+    }
+}

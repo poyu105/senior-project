@@ -1,0 +1,23 @@
+.sidebar-list{
+    padding: 0;
+    height: 250px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #F4F1F3;
+}
+.sidebar-list li{
+    color: #271E24;
+    background-color: #D5CAD2;
+}
+.sidebar-list li:hover{
+    cursor: pointer;
+    color: #F9F8F9;
+    background-color: #B7A3B0;
+}
+.sidebar-list li.active{
+    color: #F9F8F9;
+    background-color: #B7A3B0;
+}

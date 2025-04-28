@@ -1,0 +1,6 @@
+#sidebar li .btn:hover{
+    background-color: rgba(255, 255, 255, 0.5);
+}
+.bi-box-arrow-right:hover{
+    cursor: pointer;
+}
