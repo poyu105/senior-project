@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\images\01ea0538-0105-4cc2-bf9b-4ec5690d7f66.webp" />
+    <None Include="wwwroot\images\0c04d19e-0405-463b-8e0d-be5314570863.webp" />
+    <None Include="wwwroot\images\18beb871-6cb2-4d52-a71c-6106884954c5.jpg" />
+    <None Include="wwwroot\images\40680d69-e3ec-4a9a-ab18-c3afba194f94.jpg" />
+    <None Include="wwwroot\images\caaa7aad-4b50-4d95-bca0-0ce5781e2c9f.jpg" />
+    <None Include="wwwroot\images\e0918621-2e7f-4973-92d1-a83360d5f977.jpg" />
+    <None Include="wwwroot\images\eaea4959-8370-45f0-99dc-8e3a670655e3.webp" />
+  </ItemGroup>
+
+</Project>
