@@ -67,8 +67,7 @@ CREATE TABLE Prediction(
 	date DATE NOT NULL,										--預測目標日期(YYYY-MM-DD)
 	predicted_sales INT NOT NULL,							--預測商品銷售量
 	weather_condition CHAR(10) NOT NULL,					--目標日期的天氣狀況，使用文字長度限制10(輸入範例:晴朗、陰天、雨天)
-	temperature INT NOT NULL,								--目標日期的溫度，只能存放整數!!!
-	model_version VARCHAR(32) NOT NULL,						--預測模型的版本
+	season VARCHAR(2) NOT NULL,									--目標日期的季節，只能存放2字元!!!
 	create_at DATETIME DEFAULT GETDATE(),					--資料創建時間(自動生成)
 	meal_id UNIQUEIDENTIFIER,						
 	FOREIGN KEY (meal_id) REFERENCES [Meal](meal_id)		--meal_id外鍵(取得該商品的詳細資訊)
