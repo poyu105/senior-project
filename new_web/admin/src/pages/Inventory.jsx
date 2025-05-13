@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLoading } from "../context/LoadingContext"
 import ApiServices from "../api/ApiServices";
 import Modal from "../components/Modal";
+import InventoryChart from "../components/InventoryChart";
 
 export default function Inventory(){
     const { setLoading } = useLoading();
@@ -201,7 +202,11 @@ export default function Inventory(){
                         </table>
                     </div>
                 )}
-                {/* 庫存內容下方選項 */}
+                {/* 以圖表呈現 */}
+                {view==="chart" && (
+                    <InventoryChart data={inventory}></InventoryChart>
+                )}
+                {/* 庫存內容下方選項(新增Btn) */}
                 <div className="mt-2">
                     {/* 新增庫存btn */}
                     <button
