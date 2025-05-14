@@ -17,6 +17,12 @@ namespace senior_project_web.Models
         [Required]
         public int temperature { get; set; }
 
+        [Required]
+        public int total {  get; set; } //訂單總金額
+
+        [Required]
+        public string payment {  get; set; } //付款方式(cash, credit, mobile)
+
         // FK
         [Required]
         public string user_id { get; set; }
