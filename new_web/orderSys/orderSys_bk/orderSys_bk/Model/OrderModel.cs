@@ -5,7 +5,7 @@ namespace senior_project_web.Models
     public class OrderModel
     {
         [Key]
-        public int order_id { get; set; }
+        public string order_id { get; set; }
 
         [Required]
         public DateTime date { get; set; } = DateTime.Now;

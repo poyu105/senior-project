@@ -22,7 +22,7 @@ CREATE TABLE Admin(
 
 --建立Order資料表(顧客訂單)
 CREATE TABLE [Order](
-	order_id INT IDENTITY(1,1) PRIMARY KEY,				--訂單id由1開始遞增1
+	order_id NVARCHAR(8) PRIMARY KEY,					--訂單id後端隨機8碼
 	date DATETIME DEFAULT GETDATE(),					--日期由SQL SERVER自動生成
 	weather_condition CHAR(10),							--天氣狀況，使用文字長度限制10(輸入範例:晴朗、陰天、雨天)
 	season VARCHAR(2) NOT NULL,							--目標日期的季節，只能存放2字元!!!
@@ -57,7 +57,7 @@ CREATE TABLE Meal(
 CREATE TABLE Order_Meal(
 	order_meal_id INT IDENTITY(1,1) PRIMARY KEY,			--id由1開始遞增1
 	amount INT,								--訂購數量
-	order_id INT,
+	order_id NVARCHAR(8),
 	meal_id UNIQUEIDENTIFIER,
 	FOREIGN KEY (order_id) REFERENCES [Order](order_id),	--order_id外鍵
 	FOREIGN KEY (meal_id) REFERENCES Meal (meal_id)			--meal_id外鍵
