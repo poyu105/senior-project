@@ -15,7 +15,7 @@ namespace senior_project_web.Models
         public string weather_condition { get; set; }
 
         [Required]
-        public int temperature { get; set; }
+        public string season { get; set; }
 
         [Required]
         public int total {  get; set; } //訂單總金額

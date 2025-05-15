@@ -25,7 +25,7 @@ CREATE TABLE [Order](
 	order_id INT IDENTITY(1,1) PRIMARY KEY,				--訂單id由1開始遞增1
 	date DATETIME DEFAULT GETDATE(),					--日期由SQL SERVER自動生成
 	weather_condition CHAR(10),							--天氣狀況，使用文字長度限制10(輸入範例:晴朗、陰天、雨天)
-	temperature INT,									--溫度，只能存放整數!!!
+	season VARCHAR(2) NOT NULL,							--目標日期的季節，只能存放2字元!!!
 	total INT,											--訂單總金額
 	payment NVARCHAR(20),								--付款方式(cash, credit, mobile)
 	user_id VARCHAR(64) NOT NULL,
