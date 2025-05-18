@@ -42,7 +42,7 @@ export function CartProvider({children}){
         try {
             setLoading(true);
             setCartItems((prev) => prev.filter(item => item.id !== id));
-            alert('成功刪除!');
+            alert('購物車已清空!');
         } catch (error) {
             console.error(`發生錯誤: ${error}`);
             alert('發生錯誤，無法刪除!');
