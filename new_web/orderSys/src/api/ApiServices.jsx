@@ -27,6 +27,8 @@ const fetchData = async (url, method = 'GET', data = null) => {
 
 const ApiServices = {
     getMeals: () => fetchData('/Customer/getMeals'), //取得餐點列表
+    createOrder: (data) => fetchData('/Customer/createOrder', 'POST', data), //建立訂單
+
     login: (photo) => fetchData('/Auth/customer-login', 'POST', photo), //登入
 }
 export default ApiServices;
