@@ -1,0 +1,32 @@
+/* 庫存充足 */
+.stock-high::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 8px;
+    background-color: #4CAF50; /* 充足顏色 */
+    border-radius: 50%;
+}
+
+/* 庫存普通 */
+.stock-medium::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 8px;
+    background-color: #FFA707; /* 普通顏色 */
+    border-radius: 50%;
+}
+
+/* 庫存不足 */
+.stock-low::before {
+    content: '';
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 8px;
+    background-color: #F44336; /* 不足顏色 */
+    border-radius: 50%;
+}

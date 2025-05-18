@@ -35,6 +35,9 @@
                         <li class="nav-item">
                             <a class="nav-link p-2 text-dark custom-navbarcolor custom-hover rounded" asp-area="" asp-controller="Admin" asp-action="Index">管理員系統</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link p-2 text-dark custom-navbarcolor custom-hover rounded" asp-area="" asp-controller="Auth" asp-action="UserLogin">用戶登入(人臉辨識串接後刪除)</a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -50,7 +53,7 @@
                         <div>
                             <span>Hello, @User.FindFirst(ClaimTypes.Name)?.Value</span>
                             <button>
-                                <a asp-controller="Auth" asp-action="Logout">登出系統</a>
+                                <a asp-controller="Auth" asp-action="AdminLogout">登出系統</a>
                             </button>
                         </div>
                     }
@@ -60,12 +63,14 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="footer text-light text-center bg-black">
         <div class="container">
-            &copy; 2024 - senior_project_web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - 食得其所 - 陳柏諭、張弘杰、翁志昇、李子軒、梁偉航
         </div>
     </footer>
     <script>
+        //
+        //全域錯誤訊息(alert)
         //錯誤訊息
         var errMsg = '@errMsg';
         if (errMsg) {
@@ -76,6 +81,31 @@
         if (successMsg) {
             alert(decodeURIComponent(successMsg));
         }
+        //
+        //全域表單驗證腳本
+        //獲取class為needs-validation的表單(需要驗證的表單)
+        var forms = document.querySelectorAll('.needs-validation');
+        //進行submit表單驗證
+        function runValidation() {
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }
+        //重置表單驗證
+        function resetValidation() {
+            Array.prototype.slice.call(forms).forEach(function (form) {
+                form.classList.remove('was-validated'); // 移除驗證樣式
+                form.classList.add('needs-validation'); // 確保仍然具有 needs-validation
+            });
+        }
+        //
+        //
     </script>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

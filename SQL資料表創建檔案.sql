@@ -14,19 +14,20 @@ CREATE TABLE [User](
 CREATE TABLE Admin(
 	admin_id UNIQUEIDENTIFIER PRIMARY KEY,					--由SQL SERVER的Guid自動生成
 	admin_account INT IDENTITY(1000,1) NOT NULL,		--管理員帳號，由1000自動遞增1
+	username VARCHAR(255) NOT NULL,						--管理員名稱
 	password VARCHAR(255) NOT NULL,						--密碼
 	create_at DATETIME DEFAULT GETDATE(),				--資料創建時間(自動生成)
 	update_at DATETIME DEFAULT GETDATE(),				--資料更新時間(自動生成)
-	user_id VARCHAR(64) NOT NULL,
-	FOREIGN KEY (user_id) REFERENCES [User](user_id)	--user_id外鍵
 );
 
 --建立Order資料表(顧客訂單)
 CREATE TABLE [Order](
-	order_id INT IDENTITY(1,1) PRIMARY KEY,				--訂單id由1開始遞增1
+	order_id NVARCHAR(8) PRIMARY KEY,					--訂單id後端隨機8碼
 	date DATETIME DEFAULT GETDATE(),					--日期由SQL SERVER自動生成
 	weather_condition CHAR(10),							--天氣狀況，使用文字長度限制10(輸入範例:晴朗、陰天、雨天)
-	temperature INT,									--溫度，只能存放整數!!!
+	season VARCHAR(2) NOT NULL,							--目標日期的季節，只能存放2字元!!!
+	total INT,											--訂單總金額
+	payment NVARCHAR(20),								--付款方式(cash, credit, mobile)
 	user_id VARCHAR(64) NOT NULL,
 	FOREIGN KEY (user_id) REFERENCES [User](user_id)	--user_id外鍵
 );
@@ -56,7 +57,7 @@ CREATE TABLE Meal(
 CREATE TABLE Order_Meal(
 	order_meal_id INT IDENTITY(1,1) PRIMARY KEY,			--id由1開始遞增1
 	amount INT,								--訂購數量
-	order_id INT,
+	order_id NVARCHAR(8),
 	meal_id UNIQUEIDENTIFIER,
 	FOREIGN KEY (order_id) REFERENCES [Order](order_id),	--order_id外鍵
 	FOREIGN KEY (meal_id) REFERENCES Meal (meal_id)			--meal_id外鍵
@@ -68,8 +69,7 @@ CREATE TABLE Prediction(
 	date DATE NOT NULL,										--預測目標日期(YYYY-MM-DD)
 	predicted_sales INT NOT NULL,							--預測商品銷售量
 	weather_condition CHAR(10) NOT NULL,					--目標日期的天氣狀況，使用文字長度限制10(輸入範例:晴朗、陰天、雨天)
-	temperature INT NOT NULL,								--目標日期的溫度，只能存放整數!!!
-	model_version VARCHAR(32) NOT NULL,						--預測模型的版本
+	season VARCHAR(2) NOT NULL,									--目標日期的季節，只能存放2字元!!!
 	create_at DATETIME DEFAULT GETDATE(),					--資料創建時間(自動生成)
 	meal_id UNIQUEIDENTIFIER,						
 	FOREIGN KEY (meal_id) REFERENCES [Meal](meal_id)		--meal_id外鍵(取得該商品的詳細資訊)

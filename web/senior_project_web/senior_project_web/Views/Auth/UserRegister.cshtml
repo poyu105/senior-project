@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "用戶註冊";
+}
+<div class="d-flex justify-content-center">
+    <form class="col-5 text-center border border-1 rounded p-4 needs-validation" novalidate>
+        <p class="fw-bold fs-4">用戶註冊</p>
+        <div class="text-start mb-3">
+            <label for="username" class="form-label">使用者名稱</label>
+            <input id="username" type="text" class="form-control" placeholder="請輸入使用者名稱" name="username" required/>
+            <span class="invalid-feedback">請輸入使用者名稱!</span>
+        </div>
+        <div class="text-start mb-3">
+            <label for="email" class="form-label">電子郵件</label>
+            <input id="email" type="email" class="form-control" placeholder="請輸入電子郵件" name="email" required />
+            <span class="invalid-feedback">請輸入有效電子郵件!</span>
+        </div>
+        <div class="text-start mb-3">
+            <label for="phone" class="form-label">電話</label>
+            <input id="phone" type="number" class="form-control" placeholder="請輸入電話" name="phone" required />
+            <span class="invalid-feedback">請輸入電話!</span>
+        </div>
+        <div class="text-start mb-3">
+            <label for="gender" class="form-label">性別</label>
+            <div class="form-check">
+                <input id="male" class="form-check-input" type="radio" name="gender" value="M" required>
+                <label for="male" class="form-check-label">
+                    男性(Male)
+                </label>
+            </div>
+            <div class="form-check">
+                <input id="female" class="form-check-input" type="radio" name="gender" value="F" required>
+                <label for="female" class="form-check-label">
+                    女性(Female)
+                </label>
+            </div>
+            <span class="invalid-feedback">請選擇一個性別!</span>
+        </div>
+        <div class="text-start mb-3">
+            <label for="birth" class="form-label">生日</label>
+            <input id="birth" type="date" class="form-control" name="birth" required />
+            <span class="invalid-feedback">請選擇生日!</span>
+        </div>
+        <div>
+            <button class="btn btn-primary" type="submit" onclick="runValidation()">註冊</button>
+            <button class="btn btn-outline-secondary" type="reset" onclick="resetValidation()">重置</button>
+        </div>
+    </form>
+</div>

@@ -63,35 +63,52 @@
                 <button type="reset" class="btn-close" data-bs-dismiss="modal" onclick="resetPreviewImage(event)"></button>
             </div>
             <div class="modal-body d-flex flex-column fs-5">
-                <div class="my-2">
-                    <label for="img">餐點圖片</label>
+                <div class="mb-2">
+                    <label class="form-label" for="img">餐點圖片</label>
                     <input id="img" class="form-control" type="file" accept="image/*" name="img_path" onchange="previewImage(event)" required/>
                     <div class="text-center bg-secondary bg-opacity-25 mt-2">
                         <img id="imagePreview" class="w-50 h-50" src="#" alt="餐點圖片" />
                     </div>
                 </div>
-                <div class="my-2">
-                    <label for="name">名稱</label>
+                <div class="mb-2">
+                    <label class="form-label" for="name">名稱</label>
                     <input id="name" class="form-control" type="text" placeholder="請輸入餐點名稱" name="name" required />
                 </div>
-                <div class="my-2">
-                    <label for="type">類型</label>
-                    <input id="type" class="form-control" type="text" placeholder="請輸入餐點類型" name="type" required />
+                <div class="mb-2">
+                    <label class="form-label" for="type">類型</label>
+                    <div id="type" class="d-flex gap-3 form-check fs-6">
+                        <div class="form-check">
+                            <input id="tp-noodle" class="form-check-input check-type" type="radio" name="type" value="noodle" required />
+                            <label class="form-check-label" for="tp-noodle">泡麵</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="tp-drink" class="form-check-input check-type" type="radio" name="type" value="drink" required />
+                            <label class="form-check-label" for="tp-drink">飲料</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="tp-topping" class="form-check-input check-type" type="radio" name="type" value="topping" required />
+                            <label class="form-check-label" for="tp-topping">小菜</label>
+                        </div>
+                        <div class="form-check">
+                            <input id="tp-other" class="form-check-input check-type" type="radio" name="type" value="other" required />
+                            <label class="form-check-label" for="tp-other">其他</label>
+                        </div>
+                    </div>
                 </div>
-                <div class="my-2">
-                    <label for="description">描述</label>
+                <div class="mb-2">
+                    <label class="form-label" for="description">描述</label>
                     <textarea id="description" class="form-control" placeholder="請輸入餐點描述" name="description" required></textarea>
                 </div>
-                <div class="my-2">
-                    <label for="cost">成本</label>
+                <div class="mb-2">
+                    <label class="form-label" for="cost">成本</label>
                     <input id="cost" class="form-control" type="number" placeholder="請輸入餐點成本" name="cost" min="0" required />
                 </div>
-                <div class="my-2">
-                    <label for="price">價格</label>
+                <div class="mb-2">
+                    <label class="form-label" for="price">價格</label>
                     <input id="price" class="form-control" type="number" placeholder="請輸入餐點價格" name="price" min="0" required />
                 </div>
-                <div class="my-2">
-                    <label for="quantity">數量(庫存)</label>
+                <div class="mb-2">
+                    <label class="form-label" for="quantity">數量(庫存)</label>
                     <input id="quantity" class="form-control" type="number" placeholder="請輸入餐點數量(庫存)" name="quantity" min="1" required />
                 </div>
             </div>
@@ -103,6 +120,7 @@
     </div>
 </div>
 <script>
+    //
     //預覽圖片
     function previewImage(event) {
         var reader = new FileReader();
@@ -112,6 +130,7 @@
         };  
         reader.readAsDataURL(event.target.files[0]);
     }
+    //
     //重設圖片
     function resetPreviewImage(event) {
         var output = document.getElementById('imagePreview');

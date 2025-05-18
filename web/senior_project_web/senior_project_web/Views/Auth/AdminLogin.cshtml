@@ -1,0 +1,68 @@
+﻿@model AdminModel
+
+@{
+    ViewData["Title"] = "登入管理員系統";
+}
+<div class="position-absolute top-50 start-50 translate-middle col-xl-3 col-lg-4 col-md-5 col-sm-8 col-11">
+    <form class="needs-validation" method="post" novalidate>
+        <div class="card p-4 shadow-sm">
+            <div class="mb-3">
+                <label for="admin_account" class="form-label">帳號</label>
+                <input type="text" class="form-control" id="admin_account" placeholder="請輸入帳號" required/>
+                <span class="invalid-feedback">請輸入帳號!</span>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">密碼</label>
+                <input type="password" class="form-control" id="password" placeholder="請輸入密碼" required/>
+                <span class="invalid-feedback">請輸入密碼!</span>
+            </div>
+            <span id="errInfo" class="text-danger mb-2 visually-hidden">帳號或密碼錯誤!</span>
+            <button class="btn btn-primary w-100 mb-2" type="submit" onclick="handleLogin(event)">登入</button>
+            <a asp-controller="Auth" asp-action="AdminRegister" class="btn btn-secondary w-100 text-decoration-none">註冊</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function handleLogin(e) {
+        //先執行表單驗證
+        runValidation();
+
+        // 檢查表單是否有效
+        const form = document.querySelector('.needs-validation');
+        if (form.checkValidity()) {
+            e.preventDefault();
+            login(); // 表單驗證成功時執行登入
+        }
+    }
+    async function login() {
+        const account = document.getElementById('admin_account').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('/Auth/AdminLogin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ admin_account: account, password: password })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // 成功後重導向
+                window.location.href = data.redirectTo;
+            } else {
+                document.getElementById('admin_account').value = "";
+                document.getElementById('password').value = "";
+                document.getElementById('errInfo').classList.remove('visually-hidden');
+                throw new Error(`登入失敗，${data.message}`);
+            }
+
+        } catch (error) {
+            alert(error);
+        }
+    }
+
+</script>
