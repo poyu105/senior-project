@@ -4,14 +4,19 @@ import { useCart } from "../context/CartContext";
 import Modal from "../components/Modal";
 import Card from "../components/Card";
 import { useLoading } from "../context/LoadingContext";
+import ApiServices from "../api/ApiServices";
+import { useUser } from "../context/UserContext";
 
 export default function Cart(){
+    const { user } = useUser(); //取得使用者資訊
     const { setLoading } = useLoading(); //取得loading狀態
     const { cartItems, editCart, delCart } = useCart(); //取得購物車中內容
     const [currentStep, setCurrentStep] = useState(0); //當前進度
 
     const [showDelModal, setShowDelModal] = useState(false); //顯示刪除Modal
     const [delModalInfo, setDelModalInfo] = useState({}); //刪除Modal資訊
+
+    const [orderResult, setOrderResult] = useState({}); //訂單結果
 
     //處理刪除餐點
     const handleConfirmDel = ()=>{
@@ -21,6 +26,34 @@ export default function Cart(){
     //處理變更數量
     const handleChangeAmount = (id, amount)=>{
         editCart(id, amount);
+    }
+
+    //處理送出訂單
+    const handleSendOrder = async (_payment)=>{
+        try {
+            setLoading(true);
+            const data = {
+                orders: cartItems?.map(item => ({
+                    meal_id: item.id,
+                    amount: item.amount,
+                })),
+                payment: _payment,
+                total: cartItems?.reduce((total, item) => total + (item.price * item.amount), 0),
+                user_id: user.id,
+            };
+            const res = await ApiServices.createOrder(data);
+            if(res){
+                setCurrentStep(2);
+                setOrderResult(res);
+                //清空購物車
+                delCart();
+            }
+        } catch (error) {
+            console.error(`訂單送出失敗:${error}`);
+            alert(`訂單送出失敗${error}`);
+        } finally {
+            setLoading(false);
+        }
     }
 
     return(
@@ -172,9 +205,9 @@ export default function Cart(){
                                     <div className="d-flex justify-content-center align-items-center gap-3 mt-3 h-100">
                                         {
                                             [
-                                                {id: 1, title: "現金支付", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdHEL1eC9InqICNN1xfM1skuVFlct1DeMTJQ&s"},
-                                                {id: 2, title: "信用卡支付", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnTEMZDdPyGwqks3P1uoYhzri7bBZ1mbce8g&s"},
-                                                {id: 3, title: "行動支付", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQRkQLm5IUfattRdXimPLqBDSDNWFczrjdLw&s"},
+                                                {id: 1, title: "現金支付", value: 'cash', img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdHEL1eC9InqICNN1xfM1skuVFlct1DeMTJQ&s"},
+                                                {id: 2, title: "信用卡支付", value: 'credit', img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTnTEMZDdPyGwqks3P1uoYhzri7bBZ1mbce8g&s"},
+                                                {id: 3, title: "行動支付", value: 'mobile', img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQQRkQLm5IUfattRdXimPLqBDSDNWFczrjdLw&s"},
                                             ].map((value, index)=>(
                                                 <Card
                                                     key={index}
@@ -183,11 +216,7 @@ export default function Cart(){
                                                     showImg={true}
                                                     imgPath={value.img}
                                                     onClickFunc={()=>{
-                                                        setLoading(true);
-                                                        setTimeout(() => {
-                                                            setLoading(false);
-                                                            setCurrentStep(2);
-                                                        }, 1500);
+                                                        handleSendOrder(value.value);
                                                     }}>
                                                     <p className="text-center">選擇{value.title}方式付款</p>
                                                 </Card>
@@ -219,7 +248,35 @@ export default function Cart(){
                         </>
                     } 
                     {/* step3 */}
-
+                    {currentStep == 2 &&
+                        <>
+                            <div className="d-flex flex-column justify-content-between border rounded" style={{height: "calc(100vh - 300px"}}>
+                                <div className="alert alert-secondary mb-0">
+                                    <h3 className="text-center">訂單已送出!</h3>
+                                    <p className="text-center">訂單編號: {orderResult?.o_id}</p>
+                                    <p className="text-center">付款方式: {orderResult?.o_pay}</p>
+                                    <p className="text-center">總金額: {orderResult?.o_t}</p>
+                                    <ul>
+                                        {
+                                            orderResult?.o_data.meals.map((item, index)=>(
+                                                <li key={index} className="text-center">
+                                                    餐點名稱: {item.name}，數量: {item.amount}
+                                                </li>
+                                            ))
+                                        }
+                                    </ul>
+                                    <p className="text-center">感謝您的訂購!</p>
+                                </div>
+                            </div>
+                            <div className="d-flex justify-content-center mt-3">
+                                <a
+                                    href="/"
+                                    className="btn btn-primary">
+                                    返回首頁
+                                </a>
+                            </div>
+                        </>
+                    }
                 </>
             }
         </>
