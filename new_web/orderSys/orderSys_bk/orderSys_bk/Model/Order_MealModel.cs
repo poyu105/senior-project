@@ -11,7 +11,7 @@ namespace senior_project_web.Models
 
         //FK
         [Required]
-        public int order_id { get; set; }
+        public string order_id { get; set; }
         public OrderModel Order { get; set; }
 
         //FK
