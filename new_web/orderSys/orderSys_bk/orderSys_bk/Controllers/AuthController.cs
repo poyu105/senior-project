@@ -23,34 +23,38 @@ namespace orderSys_bk.Controllers
         }
 
         //呼叫python臉部辨識
-        private string CallPythonFaceRecognition(string base64Image)
+        private async Task<string> CallPythonFaceRecognition(string base64Image, int index)
         {
-            //去除前綴
             if (base64Image.StartsWith("data:image"))
             {
                 base64Image = base64Image.Substring(base64Image.IndexOf(',') + 1);
             }
-
+            Console.WriteLine($"[臉部辨識]:進行python呼叫設定[{index}]");
             var psi = new ProcessStartInfo
             {
-                FileName = "python", //啟動的可執行檔為python
-                Arguments = "", //python檔案(絕對or相對)
-                RedirectStandardOutput = true, //從C#對python寫入資料
-                RedirectStandardInput = true, //讀取python回傳的資料
+                FileName = "C:\\??????\\python.exe", //python執行檔案(python.exe)路徑
+                Arguments = "C:\\??????\\senior-project\\python\\人臉辨識\\image.py", //欲執行的python專案路徑
+                RedirectStandardOutput = true,
+                RedirectStandardInput = true,
+                RedirectStandardError = true,  // 啟用錯誤輸出管線
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
 
-            var process = Process.Start(psi);
-            if (process == null) return "unknown";
+            Console.WriteLine($"[臉部辨識]:準備執行python[{index}]");
+            using (var process = Process.Start(psi))
+            {
+                if (process == null) return "unknown";
 
-            // 傳送 base64 給 python
-            process.StandardInput.WriteLine(base64Image);
-            process.StandardInput.Close();
+                process.StandardInput.WriteLine(base64Image);
+                process.StandardInput.Close();
 
-            // 讀取 Python 回傳的 ID
-            var id = process.StandardOutput.ReadLine();
-            return id ?? "unknown";
+                string id = process.StandardOutput.ReadLine();
+                Console.WriteLine($"[臉部辨識]:python運行結果[{index}]，id為\"{id}\"");
+                process.WaitForExit();
+                Console.WriteLine($"[臉部辨識]:python運行結束[{index}]");
+                return id ?? "unknown";
+            }
         }
 
         //顧客登入
@@ -59,19 +63,19 @@ namespace orderSys_bk.Controllers
         {
             try
             {
-                if(photos ==  null || photos.Length == 0)
+                if (photos == null || photos.Length == 0)
                 {
                     return BadRequest(new { message = "登入失敗: 錯誤的資訊!" });
                 }
 
                 Dictionary<string, int> ids = new Dictionary<string, int>(); //統計回傳Id字典
                 //針對相片集執行python獲取Id
-                foreach(var photo in photos)
+                for(int i = 0; i < photos.Length; i++)
                 {
-                    string id = CallPythonFaceRecognition(photo);
+                    string id = await CallPythonFaceRecognition(photos[i], i);
                     if (ids.ContainsKey(id))
                     {
-                        ids[id] ++;
+                        ids[id]++;
                     }
                     else
                     {
@@ -81,6 +85,11 @@ namespace orderSys_bk.Controllers
 
                 //找出最高出現次數的Id
                 string finalId = ids.OrderByDescending(ids => ids.Value).First().Key;
+
+                if(finalId == "Excel 人臉數據庫不存在，將初始化新數據庫。")
+                {
+                    throw new Exception("系統錯誤，請聯絡管理員!");
+                }
 
                 //從資料庫中找到對應用戶
                 var user = await _dbContext.User.Where(u => u.user_id == finalId).FirstOrDefaultAsync();
