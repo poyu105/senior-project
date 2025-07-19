@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 import cv2
 import os
@@ -10,7 +11,6 @@ import torch
 import uuid
 from facenet_pytorch import InceptionResnetV1
 import torchvision.transforms as transforms
-from flask import Flask, request, jsonify
 import mediapipe as mp
 from scipy.spatial.distance import cosine
 
@@ -28,8 +28,6 @@ transform = transforms.Compose([
     transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
 ])
 
-app = Flask(__name__)
-
 class FaceTracker:
     def __init__(self, similarity_threshold=0.8, max_features=20, distance_threshold=0.3, storage_path='face_database.xlsx'):
         self.similarity_threshold = similarity_threshold
@@ -40,7 +38,7 @@ class FaceTracker:
 
     def load_face_database(self):
         if not os.path.exists(self.storage_path):
-            print("Excel 人臉數據庫不存在，將初始化新數據庫。")
+            print("Excel 人臉數據庫不存在，將初始化新數據庫。", flush=True)
             return {}
         try:
             df = pd.read_excel(self.storage_path)
@@ -54,7 +52,7 @@ class FaceTracker:
                 }
             return known_faces
         except Exception as e:
-            print(f"載入 Excel 時發生錯誤: {e}，將初始化新數據庫。")
+            print(f"載入 Excel 時發生錯誤: {e}，將初始化新數據庫。", flush=True)
             return {}
 
     def save_face_database(self):
@@ -100,42 +98,41 @@ class FaceTracker:
 
 face_tracker = FaceTracker()
 
-@app.route('/face-recognition', methods=['POST'])
-def face_recognition():
+def process_base64_image(base64_image_str):
     try:
-        data = request.get_json()
-        base64_image = data.get("image")
-        if not base64_image:
-            return jsonify({"message": "缺少圖片資料"}), 400
+        # 去掉 data:image/...;base64, 前綴
+        if base64_image_str.startswith("data:image"):
+            base64_image_str = base64_image_str.split(",", 1)[1]
 
-        # 解碼 base64
-        header, encoded = base64_image.split(',', 1)
-        image_data = base64.b64decode(encoded)
+        image_data = base64.b64decode(base64_image_str)
         image = Image.open(BytesIO(image_data)).convert("RGB")
-        image_np = np.array(image)
+        image_np = np.array(image).copy()
 
         # Mediapipe 偵測人臉
         results = mp_face_detection.process(image_np)
         if not results.detections:
-            return jsonify({"message": "找不到人臉"}), 400
+            print("unknown", flush=True)
+            return
 
-        # 擷取第一個偵測到的人臉框
+        # 擷取第一個人臉區塊
         ih, iw, _ = image_np.shape
         bboxC = results.detections[0].location_data.relative_bounding_box
         x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
         face = image_np[y:y + h, x:x + w]
 
         if face.shape[0] == 0 or face.shape[1] == 0:
-            return jsonify({"message": "擷取人臉失敗"}), 400
+            print("unknown", flush=True)
+            return
 
         aligned_face = cv2.resize(face, (160, 160))
         features = face_tracker.extract_features(aligned_face)
         face_id = face_tracker.find_or_create_id(features)
 
-        return jsonify({"FaceId": face_id})
+        print(face_id, flush=True)
 
     except Exception as e:
-        return jsonify({"message": f"辨識過程出錯: {str(e)}"}), 500
+        print(f"error:{str(e)}", flush=True)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == "__main__":
+    base64_input = sys.stdin.readline().strip()
+    process_base64_image(base64_input)
