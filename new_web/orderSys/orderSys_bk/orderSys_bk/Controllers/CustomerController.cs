@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using orderSys_bk.Data;
 using orderSys_bk.Model.Dto;
 using senior_project_web.Models;
@@ -71,7 +72,24 @@ namespace orderSys_bk.Controllers
             {
                 if(order == null)
                 {
-                    return BadRequest(new { message = "錯誤的點餐資訊!" });
+                    return BadRequest(new { message = "訂單建立失敗: 錯誤的點餐資訊!" });
+                }
+
+                //確認是否登入
+                string userid = ""; //登入者的id
+                if(order.user_id.IsNullOrEmpty())
+                {
+                    userid = "guest";
+                }
+                else
+                {
+                    userid = order.user_id;
+                }
+
+                //確認付款方式
+                if (order.payment.IsNullOrEmpty())
+                {
+                    return BadRequest(new { message = "訂單建立失敗: 請選擇付款方式!" });
                 }
 
                 //創造訂單物件
@@ -79,12 +97,14 @@ namespace orderSys_bk.Controllers
                 {
                     order_id = GenerateRandomOrderId(_dbContext),
                     date = DateTime.Now,
-                    weather_condition = "?",
-                    season = "?",
+                    weather_condition = null,
+                    season = "N",
                     payment = order.payment,
-                    total = (int)order.total,
-                    user_id = "1", //order.user_id,
+                    total = 0,
+                    user_id = userid,
                 };
+
+                int orderTotal = 0; //訂單的總價格
 
                 //創造訂單餐點物件
                 var order_meals = new List<Order_MealModel>();
@@ -92,14 +112,22 @@ namespace orderSys_bk.Controllers
                 {
                     //檢查餐點庫存
                     var find_meal = await _dbContext.Meal
-                        .Where(m => m.meal_id == meal.meal_id)
+                        .Where(m => m.meal_id == meal.meal_id && m.name == meal.name)
                         .Include(m => m.Inventory)
                         .FirstOrDefaultAsync();
+
+                    if(find_meal == null)
+                    {
+                        return NotFound(new { message = "訂單建立失敗: 找不到對應餐點!" });
+                    }
                     if (find_meal.Inventory.quantity <= 0)
                     {
-                        return BadRequest(new { message = $"餐點 {find_meal.name} 庫存不足!" });
+                        return BadRequest(new { message = $"訂單建立失敗: 餐點 {find_meal.name} 庫存不足!" });
                     }
 
+                    orderTotal += (find_meal.price * meal.amount); //統計總價
+
+                    //更新中間表
                     var order_meal = new Order_MealModel
                     {
                         order_meal_id = 0,
@@ -110,6 +138,8 @@ namespace orderSys_bk.Controllers
                     order_meals.Add(order_meal);
                 }
 
+                newOrder.total = orderTotal; //將統計的總價加入訂單
+
                 //將訂單物件加入資料庫
                 await _dbContext.Order.AddAsync(newOrder);
                 await _dbContext.Order_Meal.AddRangeAsync(order_meals);
@@ -118,12 +148,12 @@ namespace orderSys_bk.Controllers
                 foreach (var meal in order.orders)
                 {
                     var find_meal = await _dbContext.Meal
-                        .Where(m => m.meal_id == meal.meal_id)
+                        .Where(m => m.meal_id == meal.meal_id && m.name == meal.name)
                         .Include(m => m.Inventory)
                         .FirstOrDefaultAsync();
                     if (find_meal == null)
                     {
-                        return NotFound(new { message = "找不到對應的餐點" });
+                        return NotFound(new { message = "訂單建立失敗: 找不到對應的餐點!" });
                     }
                     find_meal.Inventory.quantity -= meal.amount;
                 }
