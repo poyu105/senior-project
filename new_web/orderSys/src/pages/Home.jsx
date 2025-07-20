@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useLoading } from "../context/LoadingContext";
 import ApiServices from "../api/ApiServices";
@@ -23,6 +23,7 @@ export default function Home(){
     const [amount, setAmount] = useState(1); //加入購物車數量
 
     const [showLoginModal, setShowLoginModal] = useState(false); //顯示登入Modal
+    const photoRef = useRef([]); //圖片參考
     const [photo, setPhoto] = useState([]); // 用來存儲拍攝的照片
     const [captureIntervalCount, setCaptureIntervalCount] = useState(3); //計時器
     let cleanup = null;  // 用來儲存清理相機流的函數
@@ -73,6 +74,7 @@ export default function Home(){
                 context.drawImage(video, 0, 0, canvas.width, canvas.height);
                 const imgData = canvas.toDataURL("image/png");
                 setPhoto(prev => [...prev, imgData]); // 儲存拍攝的圖片
+                photoRef.current.push(imgData); // 即時儲存
 
                 setCaptureIntervalCount(prev => {
                     if (prev > 0) {
@@ -81,7 +83,7 @@ export default function Home(){
                         endCamera(); //拍完三張照片後停止
                         //計時結束後進行登入
                         setTimeout(() => {
-                            login(photo);
+                            login(photoRef.current);
                         }, 0);
                     }
                 });
