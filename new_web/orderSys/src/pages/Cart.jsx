@@ -35,6 +35,7 @@ export default function Cart(){
             const data = {
                 orders: cartItems?.map(item => ({
                     meal_id: item.id,
+                    name: item.name,
                     amount: item.amount,
                 })),
                 payment: _payment,
