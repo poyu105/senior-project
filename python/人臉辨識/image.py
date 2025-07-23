@@ -29,16 +29,20 @@ transform = transforms.Compose([
 ])
 
 class FaceTracker:
-    def __init__(self, similarity_threshold=0.8, max_features=20, distance_threshold=0.3, storage_path='face_database.xlsx'):
+    def __init__(self, similarity_threshold=0.8, max_features=20, distance_threshold=0.3, storage_path='data/face_database.xlsx'):
         self.similarity_threshold = similarity_threshold
         self.max_features = max_features
         self.distance_threshold = distance_threshold
         self.storage_path = storage_path
+
+        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
         self.known_faces = self.load_face_database()
 
     def load_face_database(self):
         if not os.path.exists(self.storage_path):
             print("Excel 人臉數據庫不存在，將初始化新數據庫。", flush=True)
+            df = pd.DataFrame(columns=['ID', 'Features', 'Last Seen'])
+            df.to_excel(self.storage_path, index=False)
             return {}
         try:
             df = pd.read_excel(self.storage_path)
@@ -53,6 +57,8 @@ class FaceTracker:
             return known_faces
         except Exception as e:
             print(f"載入 Excel 時發生錯誤: {e}，將初始化新數據庫。", flush=True)
+            df = pd.DataFrame(columns=['ID', 'Features', 'Last Seen'])
+            df.to_excel(self.storage_path, index=False)
             return {}
 
     def save_face_database(self):
@@ -78,19 +84,24 @@ class FaceTracker:
     def find_or_create_id(self, features):
         if features is None or len(features) == 0:
             raise ValueError("Invalid features")
+
         best_match = None
         best_distance = float('inf')
+
         for person_id, info in self.known_faces.items():
             distances = [cosine(features, feat) for feat in info['features']]
             min_distance = min(distances)
             if min_distance < best_distance:
                 best_distance = min_distance
                 best_match = person_id
+
         if best_distance < self.distance_threshold:
             self.known_faces[best_match]['features'].append(features)
             if len(self.known_faces[best_match]['features']) > self.max_features:
                 self.known_faces[best_match]['features'].pop(0)
+            self.save_face_database()
             return best_match
+
         new_id = str(uuid.uuid4())[:8]
         self.known_faces[new_id] = {'features': [features], 'last_seen': 0}
         self.save_face_database()
@@ -100,7 +111,6 @@ face_tracker = FaceTracker()
 
 def process_base64_image(base64_image_str):
     try:
-        # 去掉 data:image/...;base64, 前綴
         if base64_image_str.startswith("data:image"):
             base64_image_str = base64_image_str.split(",", 1)[1]
 
@@ -108,13 +118,11 @@ def process_base64_image(base64_image_str):
         image = Image.open(BytesIO(image_data)).convert("RGB")
         image_np = np.array(image).copy()
 
-        # Mediapipe 偵測人臉
         results = mp_face_detection.process(image_np)
         if not results.detections:
             print("unknown", flush=True)
             return
 
-        # 擷取第一個人臉區塊
         ih, iw, _ = image_np.shape
         bboxC = results.detections[0].location_data.relative_bounding_box
         x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
