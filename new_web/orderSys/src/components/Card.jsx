@@ -1,5 +1,5 @@
 //Card參數: imgPath:圖片路徑, title:標題, chlidren:內容, onClickFunc: 點擊函數
-export default function Card({ imgPath, title, children, onClickFunc, showImg=false, cardHeight="100%" }) {
+export default function Card({ imgPath, title, children, onClickFunc, showImg=false, cardHeight="430px" }) {
     return(
         <>
             <div 
