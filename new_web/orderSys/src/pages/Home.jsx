@@ -85,9 +85,10 @@ export default function Home(){
                         setTimeout(() => {
                             login(photoRef.current);
                         }, 0);
+                        setShowLoginModal(false); //關閉登入Modal
                     }
                 });
-            }, 1000); // 每1秒更新一次
+            }, 300); // 每0.3秒更新一次
 
             // 儲存清理函數
             cleanup = () => {
@@ -110,6 +111,7 @@ export default function Home(){
     useEffect(() => {
         if (showLoginModal) {
             setPhoto([]); //重置photo內容
+            photoRef.current = []; //清空照片暫存
             startCamera();  // 啟動相機
             setCaptureIntervalCount(3); //設定計時器為3秒
         } else {
@@ -247,11 +249,11 @@ export default function Home(){
                 }}
                 closeBtnChldren={"取消"}>
                 {/* 顯示相機視窗 */}
-                {captureIntervalCount >= 0 ? (
+                {captureIntervalCount >= 0 && (
                         // 拍照畫面
                         <>
                             {/* 倒數計時 */}
-                            <p className="fs-5 alert alert-danger">請將正臉對準相機!&emsp; <strong className="fw-bold">請稍後:{captureIntervalCount}</strong></p>
+                            <p className="fs-5 alert alert-danger">請將正臉對準相機!&emsp; {/* <strong className="fw-bold">請稍後:{captureIntervalCount}</strong> */}</p>
                             {/* 相機視窗 */}
                             <div className="text-center">
                                 <video
@@ -265,14 +267,6 @@ export default function Home(){
                                     style={{ display: "none" }}
                                 ></canvas>
                             </div>
-                        </>
-                    ) : (
-                        // 拍完照後處理登入畫面
-                        <>
-                            <p>處理中，請稍後...</p>
-                            {photo.map((value, index) => (
-                                <img key={index} src={value} alt={`snapshot-${index}`} style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', marginBottom: '10px' }} />
-                            ))}
                         </>
                     )
                 }
