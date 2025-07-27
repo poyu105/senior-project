@@ -47,6 +47,7 @@ namespace orderSys_bk.Controllers
                 // 讀取回傳的 JSON 結果裡的 id
                 if (jsonResponse.TryGetProperty("id", out var idProp))
                 {
+                    Console.WriteLine($"【人臉辨識API:CallPythonFaceRecognitionAsync】:辨識成功! 出現最多次ID: {idProp.GetString()}");
                     return idProp.GetString();
                 }
                 else
@@ -84,7 +85,7 @@ namespace orderSys_bk.Controllers
             // 從資料庫找用戶
             var user = await _dbContext.User.FirstOrDefaultAsync(u => u.user_id == id);
             if (user == null)
-                return BadRequest(new { message = "查無用戶，請註冊!" });
+                return Ok(new { success = false, message = "查無用戶，請註冊!" });
 
             // 產生JWT
             var tokenHandler = new JwtSecurityTokenHandler();
