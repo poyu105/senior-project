@@ -29,7 +29,8 @@ transform = transforms.Compose([
 ])
 
 class FaceTracker:
-    def __init__(self, similarity_threshold=0.8, max_features=20, distance_threshold=0.3, storage_path='face_database.xlsx'):
+    # storage_path請改為絕對路徑!!! 並請注意安裝openpyxl: pip install openpyxl
+    def __init__(self, similarity_threshold=0.8, max_features=20, distance_threshold=0.3, storage_path='改成你的絕對路徑/face_database.xlsx'):
         self.similarity_threshold = similarity_threshold
         self.max_features = max_features
         self.distance_threshold = distance_threshold
