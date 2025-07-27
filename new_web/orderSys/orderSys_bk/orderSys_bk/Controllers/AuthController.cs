@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace orderSys_bk.Controllers
 {
@@ -22,8 +23,87 @@ namespace orderSys_bk.Controllers
             _dbContext = dbContext;
         }
 
+        private readonly HttpClient _httpClient = new HttpClient();
+
         //呼叫python臉部辨識
-        private async Task<string> CallPythonFaceRecognition(string base64Image, int index)
+        private async Task<string> CallPythonFaceRecognitionAsync(string[] base64Images)
+        {
+            var payload = new { images = base64Images };
+
+            try
+            {
+                // 呼叫 Flask API
+                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/face-recognition", payload);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"呼叫API失敗: {response.StatusCode}, 內容: {errorContent}");
+                    return null;
+                }
+
+                var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+                // 讀取回傳的 JSON 結果裡的 id
+                if (jsonResponse.TryGetProperty("id", out var idProp))
+                {
+                    Console.WriteLine($"【人臉辨識API:CallPythonFaceRecognitionAsync】:辨識成功! 出現最多次ID: {idProp.GetString()}");
+                    return idProp.GetString();
+                }
+                else
+                {
+                    Console.WriteLine("API 回傳中找不到 id");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"呼叫API例外: {ex.Message}");
+                return null;
+            }
+        }
+
+        //顧客登入
+        [HttpPost("customer-login")]
+        public async Task<IActionResult> Login([FromBody] string[] photos)
+        {
+            if (photos == null || photos.Length == 0)
+                return BadRequest(new { message = "登入失敗: 錯誤的資訊!" });
+
+            // 直接用一次呼叫API，傳4張照片
+            var id = await CallPythonFaceRecognitionAsync(photos);
+
+            if (id == null)
+                return StatusCode(500, new { message = "人臉辨識服務錯誤" });
+
+            // 判斷返回值(可依你的業務邏輯調整)
+            if (id == "Excel 人臉數據庫不存在，將初始化新數據庫。")
+            {
+                return StatusCode(500, new { message = "系統錯誤，請聯絡管理員!" });
+            }
+
+            // 從資料庫找用戶
+            var user = await _dbContext.User.FirstOrDefaultAsync(u => u.user_id == id);
+            if (user == null)
+                return Ok(new { success = false, message = "查無用戶，請註冊!" });
+
+            // 產生JWT
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.ASCII.GetBytes("1234567890_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ_0987654321");
+            var tokenDesciptior = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, user.user_id) }),
+                Expires = DateTime.UtcNow.AddMinutes(30),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            };
+            var token = tokenHandler.CreateToken(tokenDesciptior);
+            var jwtToken = tokenHandler.WriteToken(token);
+
+            return Ok(new { message = "成功登入", token = jwtToken });
+        }
+
+        //呼叫python臉部辨識
+        /*private async Task<string> CallPythonFaceRecognition(string base64Image, int index)
         {
             if (base64Image.StartsWith("data:image"))
             {
@@ -32,8 +112,8 @@ namespace orderSys_bk.Controllers
             Console.WriteLine($"[臉部辨識]:進行python呼叫設定[{index}]");
             var psi = new ProcessStartInfo
             {
-                FileName = "C:\\??????\\python.exe", //python執行檔案(python.exe)路徑
-                Arguments = "C:\\??????\\senior-project\\python\\人臉辨識\\image.py", //欲執行的python專案路徑
+                FileName = "C:\\Users\\chen0\\AppData\\Local\\Programs\\Python\\Python310\\python.exe", //python執行檔案(python.exe)路徑
+                Arguments = "C:\\Users\\chen0\\code\\畢業專題\\senior-project\\python\\人臉辨識\\image.py", //欲執行的python專案路徑
                 RedirectStandardOutput = true,
                 RedirectStandardInput = true,
                 RedirectStandardError = true,  // 啟用錯誤輸出管線
@@ -55,10 +135,10 @@ namespace orderSys_bk.Controllers
                 Console.WriteLine($"[臉部辨識]:python運行結束[{index}]");
                 return id ?? "unknown";
             }
-        }
+        }*/
 
         //顧客登入
-        [HttpPost("customer-login")]
+        /*[HttpPost("customer-login")]
         public async Task<IActionResult> Login([FromBody] string[] photos)
         {
             try
@@ -118,7 +198,7 @@ namespace orderSys_bk.Controllers
             {
                 return StatusCode(500, new { message = $"伺服器錯誤: {ex.Message}" });
             }
-        }
+        }*/
 
         //管理員登入
         [HttpPost("admin-login")]
