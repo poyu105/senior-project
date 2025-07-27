@@ -1,40 +1,33 @@
-import sys
-import numpy as np
-import cv2
 import os
-import pandas as pd
 import json
-import base64
-from io import BytesIO
-from PIL import Image
-import torch
 import uuid
+import numpy as np
+import pandas as pd
+from scipy.spatial.distance import cosine
+from PIL import Image
+import cv2
+import torch
 from facenet_pytorch import InceptionResnetV1
 import torchvision.transforms as transforms
 import mediapipe as mp
-from scipy.spatial.distance import cosine
-
-# 初始化模型
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = InceptionResnetV1(pretrained='vggface2').eval().to(device)
-
-# 初始化 Mediapipe
-mp_face_detection = mp.solutions.face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
-
-# 圖像預處理
-transform = transforms.Compose([
-    transforms.Resize((160, 160)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-])
 
 class FaceTracker:
-    # storage_path請改為絕對路徑!!! 並請注意安裝openpyxl: pip install openpyxl
-    def __init__(self, similarity_threshold=0.8, max_features=20, distance_threshold=0.3, storage_path='改成你的絕對路徑/face_database.xlsx'):
-        self.similarity_threshold = similarity_threshold
-        self.max_features = max_features
-        self.distance_threshold = distance_threshold
+    def __init__(self, storage_path):
         self.storage_path = storage_path
+        self.similarity_threshold = 0.8
+        self.max_features = 20
+        self.distance_threshold = 0.3
+
+        # 初始化模型
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
+        self.transform = transforms.Compose([
+            transforms.Resize((160, 160)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5]*3, std=[0.5]*3)
+        ])
+        self.mp_face_detection = mp.solutions.face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
+
         self.known_faces = self.load_face_database()
 
     def load_face_database(self):
@@ -47,10 +40,7 @@ class FaceTracker:
             for _, row in df.iterrows():
                 person_id = row['ID']
                 features = np.array(json.loads(row['Features']))
-                known_faces[person_id] = {
-                    'features': [features],
-                    'last_seen': row['Last Seen']
-                }
+                known_faces[person_id] = {'features': [features], 'last_seen': row['Last Seen']}
             return known_faces
         except Exception as e:
             print(f"載入 Excel 時發生錯誤: {e}，將初始化新數據庫。", flush=True)
@@ -67,11 +57,11 @@ class FaceTracker:
     def extract_features(self, face_img):
         if face_img is None or face_img.size == 0:
             raise ValueError("Invalid face image")
-        face_tensor = transform(Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))).unsqueeze(0).to(device)
+        face_tensor = self.transform(Image.fromarray(cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB))).unsqueeze(0).to(self.device)
         features_list = []
         with torch.no_grad():
             for _ in range(3):
-                features = model(face_tensor).cpu().numpy().flatten()
+                features = self.model(face_tensor).cpu().numpy().flatten()
                 features_list.append(features)
         mean_feature = np.mean(features_list, axis=0)
         return mean_feature
@@ -97,43 +87,34 @@ class FaceTracker:
         self.save_face_database()
         return new_id
 
-face_tracker = FaceTracker()
+    def process_base64_image(self, base64_image_str):
+        import base64
+        from io import BytesIO
+        try:
+            if base64_image_str.startswith("data:image"):
+                base64_image_str = base64_image_str.split(",", 1)[1]
 
-def process_base64_image(base64_image_str):
-    try:
-        # 去掉 data:image/...;base64, 前綴
-        if base64_image_str.startswith("data:image"):
-            base64_image_str = base64_image_str.split(",", 1)[1]
+            image_data = base64.b64decode(base64_image_str)
+            image = Image.open(BytesIO(image_data)).convert("RGB")
+            image_np = np.array(image).copy()
 
-        image_data = base64.b64decode(base64_image_str)
-        image = Image.open(BytesIO(image_data)).convert("RGB")
-        image_np = np.array(image).copy()
+            results = self.mp_face_detection.process(image_np)
+            if not results.detections:
+                return {"success": False, "id": None, "error": "No face detected"}
 
-        # Mediapipe 偵測人臉
-        results = mp_face_detection.process(image_np)
-        if not results.detections:
-            print("unknown", flush=True)
-            return
+            ih, iw, _ = image_np.shape
+            bboxC = results.detections[0].location_data.relative_bounding_box
+            x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
+            face = image_np[y:y + h, x:x + w]
 
-        # 擷取第一個人臉區塊
-        ih, iw, _ = image_np.shape
-        bboxC = results.detections[0].location_data.relative_bounding_box
-        x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
-        face = image_np[y:y + h, x:x + w]
+            if face.shape[0] == 0 or face.shape[1] == 0:
+                return {"success": False, "id": None, "error": "Face area is empty"}
 
-        if face.shape[0] == 0 or face.shape[1] == 0:
-            print("unknown", flush=True)
-            return
+            aligned_face = cv2.resize(face, (160, 160))
+            features = self.extract_features(aligned_face)
+            face_id = self.find_or_create_id(features)
 
-        aligned_face = cv2.resize(face, (160, 160))
-        features = face_tracker.extract_features(aligned_face)
-        face_id = face_tracker.find_or_create_id(features)
+            return {"success": True, "id": face_id, "error": None}
 
-        print(face_id, flush=True)
-
-    except Exception as e:
-        print(f"error:{str(e)}", flush=True)
-
-if __name__ == "__main__":
-    base64_input = sys.stdin.readline().strip()
-    process_base64_image(base64_input)
+        except Exception as e:
+            return {"success": False, "id": None, "error": str(e)}
