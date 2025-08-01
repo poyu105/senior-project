@@ -8,7 +8,7 @@ export default function Header({setHeaderTitle, headerTitle, search, setSearch})
         const titlemap = {
         "/login":"登入系統",
         "/register":"註冊用戶",
-        "/":"首頁",
+        "/":"本日銷售狀況",
         "/inventory":"庫存管理",
         "/dailyReport":"每日報表",
         "/prediction":"銷售預測",
