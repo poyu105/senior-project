@@ -120,7 +120,7 @@ namespace orderSys_bk.Controllers
                     {
                         return NotFound(new { message = "訂單建立失敗: 找不到對應餐點!" });
                     }
-                    if (find_meal.Inventory.quantity <= 0)
+                    if (find_meal.Inventory.quantity <= 0 || find_meal.Inventory.quantity < meal.amount)
                     {
                         return BadRequest(new { message = $"訂單建立失敗: 餐點 {find_meal.name} 庫存不足!" });
                     }
