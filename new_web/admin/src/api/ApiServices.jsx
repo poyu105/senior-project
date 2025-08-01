@@ -43,6 +43,8 @@ const ApiServices = {
     login: (data) => fetchData('/Auth/admin-login', 'POST', data),    //登入
     register: (data) => fetchData('/Auth/admin-register', 'POST', data),  //註冊
 
+    getSales: () => fetchData('/Admin/getSales', 'GET'),    //取得銷售資料
+
     getInventory: () => fetchData('/Admin/getInventory'),  //取得庫存資料
     addInventory: (data) => fetchData('/Admin/addInventory', 'POST', data),  //新增庫存資料
     deleteInventory: (id) => fetchData(`/Admin/deleteInventory/${id}`, 'DELETE'),  //刪除庫存資料
