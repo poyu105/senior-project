@@ -6,6 +6,7 @@ namespace orderSys_bk.Model.Dto
     public class OrderMeals
     {
         public Guid meal_id { get; set; } //餐點ID
+        public string name { get; set; } //餐點名稱
         public int amount { get; set; } = 1; //點餐數量
     }
     public class CreateOrderDto
