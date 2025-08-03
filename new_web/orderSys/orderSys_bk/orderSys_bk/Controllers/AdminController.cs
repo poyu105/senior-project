@@ -8,6 +8,7 @@ using senior_project_web.Models;
 using static System.Net.Mime.MediaTypeNames;
 using System.Buffers.Text;
 using System.Net.NetworkInformation;
+using Microsoft.IdentityModel.Tokens;
 
 namespace orderSys_bk.Controllers
 {
@@ -186,6 +187,51 @@ namespace orderSys_bk.Controllers
             } catch (Exception ex)
             {
                 return StatusCode(500, new { message = $"伺服器發生錯誤:{ex.Message}" });
+            }
+        }
+
+        //取得銷售狀況資料
+        [HttpGet("getSales")]
+        public async Task<IActionResult> GetSales()
+        {
+            try
+            {
+                //今天日期
+                var today = DateTime.Today;
+                //明天日期
+                var tomorrow = today.AddDays(1);
+
+                //取得所有今日訂單
+                var orders = await _dbContext.Order
+                    .Where(o => o.date >= today && o.date < tomorrow)
+                    .Select(o => o.order_id)
+                    .ToListAsync();
+
+                //由訂單編號查詢所有對應餐點及數量
+                var salesSummary = await _dbContext.Meal
+                    .GroupJoin(
+                        _dbContext.Order_Meal
+                            .Where(om => orders.Contains(om.order_id)),
+                        m => m.meal_id,
+                        om => om.meal_id,
+                        (m, oms) => new
+                        {
+                            meal_id = m.meal_id.ToString(),
+                            meal_name = m.name,
+                            amount = oms.Sum(x => x.amount),
+                            sales = m.price * oms.Sum(x => x.amount),
+                        }
+                    )
+                    .ToListAsync();
+
+                if (salesSummary.IsNullOrEmpty())
+                {
+                    return BadRequest(new { success = false, message = "無法取得銷售資料，請聯繫系統管理員!" });
+                }
+
+                return Ok(new {success = true, data = salesSummary});
+            } catch (Exception ex) {
+                return StatusCode(500, new { message = $"伺服器錯誤: {ex.Message}" });
             }
         }
     }
