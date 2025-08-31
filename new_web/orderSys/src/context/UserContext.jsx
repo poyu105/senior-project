@@ -28,11 +28,35 @@ export function UserProvider({children}){
             setLoading(false);
         }
     }
+
+    //註冊
+    const register = async (photo, info) => {
+        try {
+            setLoading(true);
+            var registerData = { 
+                photos: photo,
+                username: info.name,
+                phone_number: info.phone, 
+            };
+            const res = await ApiServices.register(registerData);
+            if(res.success){
+                alert(res.message);
+            }else{
+                alert("註冊失敗: " + res.message);
+            }
+        } catch (error) {
+            console.error(`發生錯誤: ${error}`);
+        } finally {
+            setLoading(false);
+            window.location.reload();
+        }
+    }
     
     return(
         <UserContext.Provider
             value={{
                 login,
+                register,
                 user,
             }}>
             {children}
