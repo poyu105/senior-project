@@ -49,6 +49,8 @@ const ApiServices = {
     addInventory: (data) => fetchData('/Admin/addInventory', 'POST', data),  //新增庫存資料
     deleteInventory: (id) => fetchData(`/Admin/deleteInventory/${id}`, 'DELETE'),  //刪除庫存資料
     editInventory: (data) => fetchData('/Admin/editInventory', 'PUT', data),  //編輯庫存資料
+
+    getPrediction: (data) => fetchData('/Admin/getPrediction', 'POST', data),  //取得預測銷售資料
 }
 
 export default ApiServices;
