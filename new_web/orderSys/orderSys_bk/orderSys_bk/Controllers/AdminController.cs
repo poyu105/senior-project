@@ -1,14 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Dapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using orderSys_bk.Data;
 using orderSys_bk.Model.Dto;
 using senior_project_web.Models;
-using static System.Net.Mime.MediaTypeNames;
-using System.Buffers.Text;
-using System.Net.NetworkInformation;
-using Microsoft.IdentityModel.Tokens;
+using System.Data;
 
 namespace orderSys_bk.Controllers
 {
@@ -18,10 +17,15 @@ namespace orderSys_bk.Controllers
     public class AdminController : ControllerBase
     {
         private readonly OrderSysDbContext _dbContext;
+
+        private readonly IDbConnection _dbConnection;
         public AdminController(OrderSysDbContext dbContext)
         {
             _dbContext = dbContext;
+            _dbConnection = dbContext.Database.GetDbConnection();
         }
+
+        private readonly HttpClient _httpClient = new HttpClient();
 
         //取得庫存資料
         [HttpGet("getInventory")]
@@ -232,6 +236,173 @@ namespace orderSys_bk.Controllers
                 return Ok(new {success = true, data = salesSummary});
             } catch (Exception ex) {
                 return StatusCode(500, new { message = $"伺服器錯誤: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// 呼叫python進行銷售預測
+        /// </summary>
+        /// <param name="salesReportsFromDB">過去10天的銷售紀錄[{第X天、餐點id、餐點類型、天氣狀況、季節、銷售數量}]</param>
+        /// <param name="predictionData">預測當天日期、天氣狀況、季節</param>
+        /// <returns>預測銷售資料</returns>
+        private async Task<List<Dictionary<String, Object>>> CallPythonPredictionAsync(List<Dictionary<String, Object>> salesReportsFromDB, Dictionary<String, Object> predictionData)
+        {
+            Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: salesReportsFromDB: {System.Text.Json.JsonSerializer.Serialize(salesReportsFromDB)}, predictionData: {System.Text.Json.JsonSerializer.Serialize(predictionData)}");
+            var payload = new
+            {
+                sales_data = salesReportsFromDB,
+                prediction_data = predictionData
+            };
+            Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: payload: {System.Text.Json.JsonSerializer.Serialize(payload)}");
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/face-recognition", payload);
+                Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: response: {response}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<Dictionary<String, Object>>>();
+                    Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: result: {System.Text.Json.JsonSerializer.Serialize(result)}");
+                    return result;
+                }
+                else
+                {
+                    throw new Exception("Python銷售預測服務回傳錯誤狀態碼: " + response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("呼叫Python進行銷售預測失敗: " + ex.Message);
+            }
+        }
+
+        //取得銷售預測資料
+        [HttpPost("getPrediction")]
+        public async Task<IActionResult> GetPrediction([FromBody] Dictionary<String, Object> req)
+        {
+            try
+            {
+                Console.WriteLine("=====【ConnectionStart: AdminController -> GetPrediction()】=====");
+                if (req == null || !req.ContainsKey("date") || !req.ContainsKey("latitude") || !req.ContainsKey("longitude"))
+                {
+                    return BadRequest(new { success = false, message = "請提供正確的預測資料!" });
+                }
+
+                String predictionDateStr = req["date"].ToString() ?? ""; //預測日期
+                String latitudeStr = req["latitude"].ToString() ?? "";
+                String longitudeStr = req["longitude"].ToString() ?? "";
+
+                double latitude = Convert.ToDouble(latitudeStr); //緯度
+                double longitude = Convert.ToDouble(longitudeStr); //經度
+
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 銷售預測資料: 預測日期={predictionDateStr}, 緯度={latitude}, 經度={longitude}");
+
+                if (String.IsNullOrEmpty(predictionDateStr))
+                {
+                    return BadRequest(new { success = false, message = "請提供預測日期" });
+                }
+
+                //將字串轉成日期
+                if (!DateTime.TryParse(predictionDateStr, out DateTime parsedDate))
+                {
+                    return BadRequest(new { success = false, message = "日期格式錯誤，請使用YYYY-MM-DD格式" });
+                }
+
+                DateTime today = DateTime.Today; //今天日期
+                Console.WriteLine($"AdminController -> GetPrediction() -> 今天日期: {today.ToString("yyyy-MM-dd")}, 預測日期: {parsedDate.ToString("yyyy-MM-dd")}");
+                //可預測範圍: 今天~3天內
+                if (parsedDate < today)
+                {
+                    return BadRequest(new { success = false, message = "預測日期不可早於今天" });
+                }else if((parsedDate - today).TotalDays >= 3)
+                {
+                    return BadRequest(new { success = false, message = "預測日期不可超過3天" });
+                }
+
+                //取得過去10天的銷售紀錄(從今天日期開始往前推)
+                var startDate = today.AddDays(-10).ToString("yyyyMMdd");
+                var endDate = today.AddDays(-1).ToString("yyyyMMdd");
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 查詢過去10天銷售紀錄: {startDate} ~ {endDate}");
+
+                if (_dbConnection.State != ConnectionState.Open)
+                {
+                    await ((SqlConnection)_dbConnection).OpenAsync();
+                }
+
+                var sql = 
+                    @" 
+                        select convert(nvarchar(8), o.date, 112) as date, m.meal_id, m.name, m.type, sum(om.amount) as amount, max(o.weather_condition) as weatherCondition, max(o.season) as season 
+                        from [Order] o
+                        left join [Order_Meal] om on (om.order_id = o.order_id)
+                        left join [Meal] m on (m.meal_id = om.meal_id)
+                        where convert(nvarchar(8), o.date, 112) >= @startDate and convert(nvarchar(8), o.date, 112) <= @endDate
+                        group by m.meal_id, m.name, m.type, convert(nvarchar(8), o.date, 112)
+                    ";
+                var result = await _dbConnection.QueryAsync(sql, new { startDate, endDate });
+                List<Dictionary<String,Object>> salesReportsFromDB = result.Select(r => new Dictionary<String, Object>
+                {
+                    { "date", r.date },
+                    { "meal_id", r.meal_id },
+                    { "name", r.name },
+                    { "type", r.type },
+                    { "amount", r.amount },
+                    { "weather", r.weatherCondition },
+                    { "season", r.season }
+                }).ToList();
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 取得過去10天銷售紀錄: {salesReportsFromDB.Count} 筆");
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 過去10天銷售紀錄: {System.Text.Json.JsonSerializer.Serialize(salesReportsFromDB)}");
+
+                //if (salesReportsFromDB.IsNullOrEmpty())
+                //{
+                //    return BadRequest(new { success = false, message = "無法取得過去10天銷售紀錄!" });
+                //}
+
+                string weatherCondition = await Services.WeatherService.GetWeatherForecastAsync(predictionDateStr, latitude, longitude); //取得預測日期的天氣狀況
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 預測日期的天氣狀況: {weatherCondition}");
+
+                if (weatherCondition == "N")
+                {
+                    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況(未知)" });
+                }else if(string.IsNullOrEmpty(weatherCondition))
+                {
+                    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況" });
+                }
+
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 預測日期的月份: {parsedDate.Month}");
+                if (parsedDate.Month < 1 || parsedDate.Month > 12)
+                {
+                    return BadRequest(new { success = false, message = "月份錯誤，請提供正確的月份" });
+                }
+
+                //對應季節 win:冬季(12,1,2) spr:春季(3,4,5) sum:夏季(6,7,8) aut:秋季(9,10,11)
+                string season = Services.WeatherService.getSeason(parsedDate.Month);
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 預測日期的季節: {season}");
+
+                //預測資料
+                Dictionary<String, Object> predictionData = new Dictionary<String, Object>
+                {
+                    { "date", predictionDateStr },
+                    { "weather", weatherCondition },
+                    { "season", season }
+                };
+
+                List<Dictionary<String, Object>> predictionResult = new List<Dictionary<String, Object>>();
+                predictionResult = await CallPythonPredictionAsync(salesReportsFromDB, predictionData); //呼叫python進行銷售預測
+                Console.WriteLine($"【AdminController】 -> GetPrediction() -> 銷售預測結果: {System.Text.Json.JsonSerializer.Serialize(predictionResult)}");
+
+                return Ok(new { success = true, data = predictionResult } );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("\n-----【ERROR】-----\n");
+                Console.WriteLine("【AdminController】 -> GetPrediction() -> 伺服器錯誤: " + ex.Message);
+                Console.WriteLine("\n-------------------\n");
+                return StatusCode(500, new { success = false, message = $"伺服器錯誤: {ex.Message}" });
+            }
+            finally
+            {
+                Console.WriteLine("======【ConnectionEnd: AdminController -> GetPrediction()】======");
             }
         }
     }
