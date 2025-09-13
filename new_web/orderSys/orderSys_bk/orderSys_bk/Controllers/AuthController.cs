@@ -58,7 +58,7 @@ namespace orderSys_bk.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"呼叫API例外: {ex.Message}");
+                Console.WriteLine($"呼叫臉部辨識API例外: {ex.Message}");
                 return null;
             }
         }
