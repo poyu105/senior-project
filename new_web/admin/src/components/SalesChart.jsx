@@ -1,6 +1,6 @@
 import Chart from 'react-apexcharts';
 
-export default function SalesChart({ data }) {
+export default function SalesChart({ title, data }) {
     const options = {
         chart: {
             type: 'bar',
@@ -47,7 +47,7 @@ export default function SalesChart({ data }) {
             }
         ],
         title: {
-            text: '商品銷售狀況',
+            text: title,
             align: 'center',
         },
         //每個bar使用不同顏色

@@ -51,6 +51,19 @@ export function CartProvider({children}){
         }
     }
 
+    //清空購物車
+    const clearCart = () => {
+        try {
+            setLoading(true);
+            setCartItems([]);
+        } catch (error) {
+            console.error(`發生錯誤: ${error}`);
+            alert('發生錯誤，無法清空購物車!');
+        } finally{
+            setLoading(false);
+        }
+    }
+
     //編輯購物車
     const editCart = (id, amount) => {
         try {
@@ -79,6 +92,7 @@ export function CartProvider({children}){
                 cartItems,
                 editCart,
                 delCart,
+                clearCart
             }}>
             {children}
         </CartContext.Provider>

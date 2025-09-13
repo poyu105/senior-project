@@ -10,13 +10,36 @@ import { useUser } from "../context/UserContext";
 export default function Cart(){
     const { user } = useUser(); //取得使用者資訊
     const { setLoading } = useLoading(); //取得loading狀態
-    const { cartItems, editCart, delCart } = useCart(); //取得購物車中內容
+    const { cartItems, editCart, delCart, clearCart } = useCart(); //取得購物車中內容
     const [currentStep, setCurrentStep] = useState(0); //當前進度
 
     const [showDelModal, setShowDelModal] = useState(false); //顯示刪除Modal
     const [delModalInfo, setDelModalInfo] = useState({}); //刪除Modal資訊
 
     const [orderResult, setOrderResult] = useState({}); //訂單結果
+
+        //取得使用者位置
+    const [location, setLocation] = useState({ latitude: 25.0478, longitude: 121.5319 });
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    });
+                    console.log(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.error(error);
+                    //台北預設座標
+                    setLocation({ latitude: 25.0478, longitude: 121.5319 });
+                }
+            );
+        } else {
+            console.error("瀏覽器不支援 Geolocation API");
+        }
+    }, []);
 
     //處理刪除餐點
     const handleConfirmDel = ()=>{
@@ -41,13 +64,14 @@ export default function Cart(){
                 payment: _payment,
                 total: cartItems?.reduce((total, item) => total + (item.price * item.amount), 0),
                 user_id: user.id,
+                location: location,
             };
             const res = await ApiServices.createOrder(data);
             if(res){
                 setCurrentStep(2);
                 setOrderResult(res);
                 //清空購物車
-                delCart();
+                clearCart();
             }
         } catch (error) {
             console.error(`訂單送出失敗:${error}`);
@@ -59,7 +83,7 @@ export default function Cart(){
 
     return(
         <>
-            {cartItems?.length <= 0 ? 
+            {cartItems?.length <= 0 && currentStep != 2 ? 
                 <p>目前購物車中沒有任何餐點喔!</p>
             :
                 <>
@@ -251,7 +275,7 @@ export default function Cart(){
                     {/* step3 */}
                     {currentStep == 2 &&
                         <>
-                            <div className="d-flex flex-column justify-content-between border rounded" style={{height: "calc(100vh - 300px"}}>
+                            <div className="d-flex flex-column justify-content-between border rounded" style={{height: "calc(100vh - 400px"}}>
                                 <div className="alert alert-secondary mb-0">
                                     <h3 className="text-center">訂單已送出!</h3>
                                     <p className="text-center">訂單編號: {orderResult?.o_id}</p>
