@@ -63,6 +63,46 @@ namespace orderSys_bk.Controllers
             }
         }
 
+        //顧客註冊
+        [HttpPost("customer-register")]
+        public async Task<IActionResult> Register([FromBody] UserRegisterDto req)
+        {
+            if (req.photos == null || req.photos.Length == 0)
+            {
+                return BadRequest(new { success = false, message = "註冊失敗: 錯誤的辨識資料!" });
+            }
+                
+            // 直接用一次呼叫API，傳4張照片
+            var id = await CallPythonFaceRecognitionAsync(req.photos);
+            if (id == null){
+                return StatusCode(500, new { success = false, message = "人臉辨識服務錯誤" });
+            }
+
+            // 檢查是否有對應的使用者存在
+            var existingUser = await _dbContext.User.FirstOrDefaultAsync(u => u.user_id == id);
+            if (existingUser != null){
+                return BadRequest(new { success = false, message = "註冊失敗: 用戶已存在!" });
+            }
+
+            // 建立新的使用者
+            var newUser = new UserModel
+            {
+                user_id = id,
+                username = req.username,
+                gender = 'M',
+                birth = DateTime.Now,
+                phone_number = req.phone_number,
+                email = "test@email.com",
+                create_at = DateTime.Now,
+                update_at = DateTime.Now,
+            };
+
+            // 將使用者加入資料庫
+            _dbContext.User.Add(newUser);
+            await _dbContext.SaveChangesAsync();
+            return Ok(new { success = true, message = "註冊成功，請登入!" });
+        }
+
         //顧客登入
         [HttpPost("customer-login")]
         public async Task<IActionResult> Login([FromBody] string[] photos)
@@ -99,7 +139,7 @@ namespace orderSys_bk.Controllers
             var token = tokenHandler.CreateToken(tokenDesciptior);
             var jwtToken = tokenHandler.WriteToken(token);
 
-            return Ok(new { message = "成功登入", token = jwtToken });
+            return Ok(new { success = true, message = "成功登入", token = jwtToken });
         }
 
         //呼叫python臉部辨識

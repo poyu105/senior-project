@@ -30,5 +30,6 @@ const ApiServices = {
     createOrder: (data) => fetchData('/Customer/createOrder', 'POST', data), //建立訂單
 
     login: (photo) => fetchData('/Auth/customer-login', 'POST', photo), //登入
+    register: (info) => fetchData('/Auth/customer-register', 'POST', info), //註冊
 }
 export default ApiServices;

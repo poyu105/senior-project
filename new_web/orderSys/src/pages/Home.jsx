@@ -7,12 +7,11 @@ import Card from "../components/Card";
 import Modal from "../components/Modal";
 import { useCart } from "../context/CartContext";
 import { useUser } from "../context/UserContext";
-import { Link } from "react-router-dom";
 
 export default function Home(){
     const { setLoading } = useLoading();
     const { addToCart } = useCart(); //購物車Context
-    const { login } = useUser(); //用戶Context
+    const { login, register } = useUser(); //用戶Context
     
     const [meals, setMeals] = useState([]); //餐點列表
 
@@ -27,6 +26,10 @@ export default function Home(){
     const [photo, setPhoto] = useState([]); // 用來存儲拍攝的照片
     const [captureIntervalCount, setCaptureIntervalCount] = useState(3); //計時器
     let cleanup = null;  // 用來儲存清理相機流的函數
+
+    const [showRegisterModal, setShowRegisterModal] = useState(false); //顯示註冊Modal
+    const [registerInfo, setRegisterInfo] = useState({name: "", phone: ""}); //註冊資訊
+    const [showRegisterCamera, setShowRegisterCamera] = useState(false); //顯示註冊相機
 
     //取得餐點資訊
     useEffect(()=>{
@@ -83,7 +86,7 @@ export default function Home(){
                         endCamera(); //拍完三張照片後停止
                         //計時結束後進行登入
                         setTimeout(() => {
-                            login(photoRef.current);
+                            showLoginModal ? login(photoRef.current) : register(photoRef.current, registerInfo); //執行登入或註冊
                         }, 0);
                         setShowLoginModal(false); //關閉登入Modal
                     }
@@ -107,9 +110,9 @@ export default function Home(){
         }
     };
 
-    // 當 showLoginModal 改變時執行
+    // 當 showLoginModal, showRegisterModal 改變時執行
     useEffect(() => {
-        if (showLoginModal) {
+        if (showLoginModal || showRegisterModal) {
             setPhoto([]); //重置photo內容
             photoRef.current = []; //清空照片暫存
             startCamera();  // 啟動相機
@@ -121,7 +124,17 @@ export default function Home(){
         return () => {
             endCamera();  // 確保組件卸載時清理
         };
-    }, [showLoginModal]);
+    }, [showLoginModal, showRegisterCamera]);
+
+    //進行註冊資料驗證
+    const handleRegister = () => {
+        var form = document.getElementById("registerForm");
+        if(!form.checkValidity()){
+            form.classList.add("was-validated");
+            return;
+        }
+        setShowRegisterCamera(true);
+    }
 
     return(
         <>
@@ -140,11 +153,14 @@ export default function Home(){
                         快速登入
                     </button>
                     {/* 註冊Btn */}
-                    <Link
-                        to="/register"
-                        className="btn btn-outline-secondary w-100">
+                    <button
+                        type="button"
+                        className="btn btn-outline-secondary w-100 mt-2"
+                        onClick={()=>{
+                            setShowRegisterModal(true);
+                        }}>
                         註冊
-                    </Link>
+                    </button>
                 </div>
                 {/* 餐點Card */}
                 <div className="mx-auto p-0 col-9">
@@ -250,6 +266,82 @@ export default function Home(){
                 closeBtnChldren={"取消"}>
                 {/* 顯示相機視窗 */}
                 {captureIntervalCount >= 0 && (
+                        // 拍照畫面
+                        <>
+                            {/* 倒數計時 */}
+                            <p className="fs-5 alert alert-danger">請將正臉對準相機!&emsp; {/* <strong className="fw-bold">請稍後:{captureIntervalCount}</strong> */}</p>
+                            {/* 相機視窗 */}
+                            <div className="text-center">
+                                <video
+                                    id="video"
+                                    autoPlay
+                                    playsInline
+                                    style={{ width: "100%", maxHeight: "300px", objectFit: "cover" }}
+                                ></video>
+                                <canvas
+                                    id="canvas"
+                                    style={{ display: "none" }}
+                                ></canvas>
+                            </div>
+                        </>
+                    )
+                }
+            </Modal>
+
+            {/* 註冊Modal */}
+            <Modal
+                show={showRegisterModal}
+                title={"註冊會員"}
+                onClose={()=>{
+                    setShowRegisterModal(false);
+                    endCamera();
+                }}
+                closeBtnChldren={"取消"}
+                confirmBtnChildren={"儲存"}>
+                {/* 填寫表格 */}
+                {
+                    !showRegisterCamera && (
+                        <form id="registerForm" className="needs-validation" noValidate>
+                            <div className="mb-3">
+                                <label className="form-label">名稱</label>
+                                <input 
+                                    type="text" 
+                                    className="form-control" 
+                                    placeholder="請填寫名稱" 
+                                    value={registerInfo?.name}
+                                    onChange={(e)=>{
+                                        setRegisterInfo({...registerInfo, name: e.target.value});
+                                    }}
+                                    required/>
+                                <span className="invalid-feedback">請輸入名稱</span>
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">電話</label>
+                                <input 
+                                    type="tel" 
+                                    className="form-control" 
+                                    placeholder="請填寫電話" 
+                                    value={registerInfo?.phone}
+                                    onChange={(e)=>{
+                                        setRegisterInfo({...registerInfo, phone: e.target.value});
+                                    }}
+                                    required/>
+                                <span className="invalid-feedback">請輸入電話</span>
+                            </div>
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary w-100 mt-2"
+                                onClick={()=>{
+                                    handleRegister();
+                                }}>
+                                進行人臉辨識註冊
+                            </button>
+                        </form>
+                    )
+                }
+                
+                {/* 顯示相機視窗 */}
+                {(captureIntervalCount >= 0 && showRegisterCamera) && (
                         // 拍照畫面
                         <>
                             {/* 倒數計時 */}
