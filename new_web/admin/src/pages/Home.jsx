@@ -32,7 +32,7 @@ export default function Home(){
 
     return(
         <>
-            <SalesChart data={sales} />
+            <SalesChart title={"商品銷售狀況"} data={sales} />
         </>
     )
 }
