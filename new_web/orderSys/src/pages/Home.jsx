@@ -297,7 +297,10 @@ export default function Home(){
                     endCamera();
                 }}
                 closeBtnChldren={"取消"}
-                confirmBtnChildren={"儲存"}>
+                onConfirm={()=>{
+                    handleRegister();
+                }}
+                confirmBtnChildren={"進行人臉辨識註冊"}>
                 {/* 填寫表格 */}
                 {
                     !showRegisterCamera && (
@@ -328,14 +331,6 @@ export default function Home(){
                                     required/>
                                 <span className="invalid-feedback">請輸入電話</span>
                             </div>
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary w-100 mt-2"
-                                onClick={()=>{
-                                    handleRegister();
-                                }}>
-                                進行人臉辨識註冊
-                            </button>
                         </form>
                     )
                 }
