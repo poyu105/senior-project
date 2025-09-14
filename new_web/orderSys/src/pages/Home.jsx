@@ -11,7 +11,7 @@ import { useUser } from "../context/UserContext";
 export default function Home(){
     const { setLoading } = useLoading();
     const { addToCart } = useCart(); //購物車Context
-    const { login, register } = useUser(); //用戶Context
+    const { user, login, register } = useUser(); //用戶Context
     
     const [meals, setMeals] = useState([]); //餐點列表
 
@@ -44,7 +44,7 @@ export default function Home(){
             setLoading(false);
         }
         fetchData();
-    },[])
+    },[,user]);
 
     //監控加入購物車數量變化
     useEffect(()=>{
