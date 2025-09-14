@@ -1,9 +1,16 @@
 const API_BASE_URL = "https://localhost:7220/api";
 
 const fetchData = async (url, method = 'GET', data = null) => {
+    const token = sessionStorage.getItem("token"); //取得token
+    
     const headers = {
         'Content-Type' : 'application/json',
     };
+
+    if(token){
+        headers["Authorization"] = `Bearer ${token}`;
+    }
+
     const options = {
         headers,
         method,
@@ -26,7 +33,7 @@ const fetchData = async (url, method = 'GET', data = null) => {
 }
 
 const ApiServices = {
-    getMeals: () => fetchData('/Customer/getMeals'), //取得餐點列表
+    getMeals: () => fetchData('/Customer/getMeals', 'GET'), //取得餐點列表
     createOrder: (data) => fetchData('/Customer/createOrder', 'POST', data), //建立訂單
 
     login: (photo) => fetchData('/Auth/customer-login', 'POST', photo), //登入
