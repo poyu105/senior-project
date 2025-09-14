@@ -351,14 +351,42 @@ namespace orderSys_bk.Controllers
                     await ((SqlConnection)_dbConnection).OpenAsync();
                 }
 
-                var sql = 
+                var sql =
                     @" 
-                        select convert(nvarchar(8), o.date, 112) as date, m.meal_id, m.name, m.type, sum(om.amount) as amount, max(o.weather_condition) as weatherCondition, max(o.season) as season 
-                        from [Order] o
-                        left join [Order_Meal] om on (om.order_id = o.order_id)
-                        left join [Meal] m on (m.meal_id = om.meal_id)
-                        where convert(nvarchar(8), o.date, 112) >= @startDate and convert(nvarchar(8), o.date, 112) <= @endDate
-                        group by m.meal_id, m.name, m.type, convert(nvarchar(8), o.date, 112)
+                        ;WITH DateRange AS (
+                            SELECT CAST(@startDate AS DATE) AS DateValue
+                            UNION ALL
+                            SELECT DATEADD(DAY, 1, DateValue)
+                            FROM DateRange
+                            WHERE DateValue < @endDate
+                        ),
+                        DailyMealSales AS (
+                            SELECT 
+                                CONVERT(nvarchar(8), o.date, 112) AS date,
+                                om.meal_id,
+                                SUM(om.amount) AS amount,
+                                MAX(o.weather_condition) AS weatherCondition,
+                                MAX(o.season) AS season
+                            FROM [Order] o
+                            INNER JOIN Order_Meal om ON o.order_id = om.order_id
+                            WHERE CONVERT(nvarchar(8), o.date, 112) BETWEEN @startDate AND @endDate
+                            GROUP BY CONVERT(nvarchar(8), o.date, 112), om.meal_id
+                        )
+                        SELECT 
+                            CONVERT(nvarchar(8), d.DateValue, 112) AS date,
+                            m.meal_id,
+                            m.name,
+                            m.type,
+                            ISNULL(dms.amount, 0) AS amount,
+                            dms.weatherCondition,
+                            dms.season
+                        FROM DateRange d
+                        CROSS JOIN Meal m
+                        LEFT JOIN DailyMealSales dms
+                            ON dms.meal_id = m.meal_id
+                            AND dms.date = CONVERT(nvarchar(8), d.DateValue, 112)
+                        ORDER BY d.DateValue, m.name
+                        OPTION (MAXRECURSION 0);
                     ";
                 var result = await _dbConnection.QueryAsync(sql, new { startDate, endDate });
                 List<Dictionary<String,Object>> salesReportsFromDB = result.Select(r => new Dictionary<String, Object>
