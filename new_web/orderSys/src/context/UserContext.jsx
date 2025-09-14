@@ -6,7 +6,7 @@ const UserContext = createContext();
 
 export function UserProvider({children}){
     const { setLoading } = useLoading();
-    const [user, setUser] = useState({}); //使用者資訊
+    const [user, setUser] = useState(null); //使用者資訊
 
     //執行登入操作
     const login = async (photo)=>{
@@ -15,9 +15,10 @@ export function UserProvider({children}){
             setLoading(true);
             const res = await ApiServices.login(photo);
             if(res.success){
-                window.location.reload();
                 alert("登入成功!");
-                setUser(res.user);
+                setUser(res.token);
+                //window.location.reload();
+                sessionStorage.setItem("token", res.token);
             }else{
                 alert("登入失敗: " + res.message);
                 setUser(null);
@@ -51,6 +52,13 @@ export function UserProvider({children}){
             window.location.reload();
         }
     }
+
+    //登出
+    const logout = () => {
+        setUser(null);
+        sessionStorage.removeItem("token");
+        //window.location.reload();
+    }
     
     return(
         <UserContext.Provider
@@ -58,6 +66,7 @@ export function UserProvider({children}){
                 login,
                 register,
                 user,
+                logout,
             }}>
             {children}
         </UserContext.Provider>
