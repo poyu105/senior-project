@@ -178,12 +178,33 @@ namespace orderSys_bk.Controllers
                     return NotFound(new { message = "找不到對應的資料" });
                 }
 
+                // 解析 base64 字串（格式: data: image / png; base64,...）
+                var base64Data = inventoryData.img_path;
+                var base64Parts = base64Data.Split(',');
+                if (base64Parts.Length != 2)
+                {
+                    return BadRequest(new { message = "圖片格式不正確!" });
+                }
+
+                var imageBytes = Convert.FromBase64String(base64Parts[1]);
+
+                // 產生唯一檔名
+                var fileName = Guid.NewGuid().ToString() + ".jpg";
+                var relativePath = Path.Combine("images", fileName);
+                var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
+
+                // 確保資料夾存在
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+                // 寫入檔案
+                System.IO.File.WriteAllBytes(fullPath, imageBytes);
+
                 find_meal.name = inventoryData.name;
                 find_meal.type = inventoryData.type;
                 find_meal.description = inventoryData.description;
                 find_meal.cost = inventoryData.cost;
                 find_meal.price = inventoryData.price;
-                find_meal.img_path = inventoryData.img_path;
+                find_meal.img_path = relativePath;
                 find_meal.Inventory.quantity = inventoryData.quantity;
 
                 await _dbContext.SaveChangesAsync();
@@ -347,7 +368,7 @@ namespace orderSys_bk.Controllers
                     { "name", r.name },
                     { "type", r.type },
                     { "amount", r.amount },
-                    { "weather", r.weatherCondition },
+                    { "weather", Services.StringServices.TrimSpaces(r.weatherCondition) },
                     { "season", r.season }
                 }).ToList();
                 Console.WriteLine($"【AdminController】 -> GetPrediction() -> 取得過去10天銷售紀錄: {salesReportsFromDB.Count} 筆");
@@ -358,16 +379,16 @@ namespace orderSys_bk.Controllers
                 //    return BadRequest(new { success = false, message = "無法取得過去10天銷售紀錄!" });
                 //}
 
-                string weatherCondition = await Services.WeatherService.GetWeatherForecastAsync(predictionDateStr, latitude, longitude); //取得預測日期的天氣狀況
+                string weatherCondition = Services.StringServices.TrimSpaces(await Services.WeatherService.GetWeatherForecastAsync(predictionDateStr, latitude, longitude)); //取得預測日期的天氣狀況
                 Console.WriteLine($"【AdminController】 -> GetPrediction() -> 預測日期的天氣狀況: {weatherCondition}");
 
-                if (weatherCondition == "N")
-                {
-                    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況(未知)" });
-                }else if(string.IsNullOrEmpty(weatherCondition))
-                {
-                    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況" });
-                }
+                //if (weatherCondition == "N")
+                //{
+                //    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況(未知)" });
+                //}else if(string.IsNullOrEmpty(weatherCondition))
+                //{
+                //    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況" });
+                //}
 
                 Console.WriteLine($"【AdminController】 -> GetPrediction() -> 預測日期的月份: {parsedDate.Month}");
                 if (parsedDate.Month < 1 || parsedDate.Month > 12)
