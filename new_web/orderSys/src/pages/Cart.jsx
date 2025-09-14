@@ -8,7 +8,7 @@ import ApiServices from "../api/ApiServices";
 import { useUser } from "../context/UserContext";
 
 export default function Cart(){
-    const { user } = useUser(); //取得使用者資訊
+    const { user, logout } = useUser(); //取得使用者資訊
     const { setLoading } = useLoading(); //取得loading狀態
     const { cartItems, editCart, delCart, clearCart } = useCart(); //取得購物車中內容
     const [currentStep, setCurrentStep] = useState(0); //當前進度
@@ -63,7 +63,7 @@ export default function Cart(){
                 })),
                 payment: _payment,
                 total: cartItems?.reduce((total, item) => total + (item.price * item.amount), 0),
-                user_id: user.id,
+                user_id: user,
                 location: location,
             };
             const res = await ApiServices.createOrder(data);
@@ -72,6 +72,7 @@ export default function Cart(){
                 setOrderResult(res);
                 //清空購物車
                 clearCart();
+                logout();
             }
         } catch (error) {
             console.error(`訂單送出失敗:${error}`);
