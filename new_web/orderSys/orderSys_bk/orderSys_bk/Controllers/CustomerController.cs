@@ -6,6 +6,7 @@ using orderSys_bk.Data;
 using orderSys_bk.Model.Dto;
 using senior_project_web.Models;
 using System.Linq;
+using System.Security.Claims;
 
 namespace orderSys_bk.Controllers
 {
@@ -43,6 +44,11 @@ namespace orderSys_bk.Controllers
         {
             try
             {
+                Console.WriteLine("\n=====【ConnectionStart: CustomerController -> GetMeals()】=====\n");
+
+                String user_id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "guest"; //從JWT取得user_id
+                Console.WriteLine($"【CustomerController】 -> GetMeals() -> user_id: {user_id}");
+
                 var meals = await _dbContext.Meal
                     .Select(m => new
                     {
@@ -54,6 +60,8 @@ namespace orderSys_bk.Controllers
                         price = m.price,
                         cost = m.cost,
                     }).ToListAsync();
+                Console.WriteLine($"【CustomerController】 -> GetMeals() -> meals: {Services.JsonServices.ToJson(meals)}");
+
                 if (meals == null)
                 {
                     return BadRequest(new { message = "找不到餐點" });
@@ -63,6 +71,10 @@ namespace orderSys_bk.Controllers
             {
                 return StatusCode(500, new { message = $"錯誤: {ex.Message}" });
             }
+            finally
+            {
+                Console.WriteLine("\n======【ConnectionEnd: CustomerController -> GetMeals()】======\n");
+            }
         }
 
         //處理點餐
@@ -71,14 +83,13 @@ namespace orderSys_bk.Controllers
         {
             try
             {
-                Console.WriteLine("=====【ConnectionStart: CustomerController -> CreateOrder()】=====");
+                Console.WriteLine("\n=====【ConnectionStart: CustomerController -> CreateOrder()】=====\n");
                 Console.WriteLine($"【CustomerController】 -> CreateOrder() -> 處理點餐: req: {Services.JsonServices.ToJson(req)}");
                 if (req == null || req.Count == 0)
                 {
                     return BadRequest(new { success = false, message = "訂單建立失敗: 請提供點餐資訊!" });
                 }
-
-                String user_id = req.ContainsKey("user_id") ? req["user_id"]?.ToString() : "guest"; //user_id
+                String user_id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "guest"; //從JWT取得user_id
                 String payment = req.ContainsKey("payment") ? req["payment"]?.ToString() : null; //付款方式
                 int total = req.ContainsKey("total") ? Services.JsonServices.ToInt(req["total"] ?? 0) : 0; //訂單總價
                 Dictionary<String, Object> location = req.ContainsKey("location") ? Services.JsonServices.ToDictionary(req["location"]) as Dictionary<String, Object> : null; //位置資訊
@@ -218,7 +229,7 @@ namespace orderSys_bk.Controllers
             }
             finally
             {
-                Console.WriteLine("======【ConnectionEnd: CustomerController -> CreateOrder()】======");
+                Console.WriteLine("\n======【ConnectionEnd: CustomerController -> CreateOrder()】======\n");
             }
         }
     }
