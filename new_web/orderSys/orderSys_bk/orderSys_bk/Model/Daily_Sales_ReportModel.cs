@@ -17,6 +17,13 @@ namespace senior_project_web.Models
         [Required]
         public DateTime date { get; set; }
 
+        [Required]
+        [MaxLength(15)]
+        public string weather_condition { get; set; }
+
+        [Required]
+        public string season { get; set; }
+
         // FK
         [Required]
         [ForeignKey("meal_id")]
