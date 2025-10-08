@@ -4,6 +4,7 @@ import ApiServices from "../api/ApiServices";
 import Modal from "../components/Modal";
 import InventoryChart from "../components/InventoryChart";
 
+const VITE_BASE_URL = import.meta.env.VITE_BASE_URL;
 export default function Inventory(){
     const { setLoading } = useLoading();
     const [inventory, setInventory] = useState([]); //庫存資料
@@ -157,7 +158,7 @@ export default function Inventory(){
                                 {inventory.map((item, index)=>(
                                     <tr key={index}>
                                         <td>
-                                            <img src={`https://localhost:7220/${item.img_path}`} alt={item.name} className="img-fluid" style={{width: "100px", height: "100px"}}/>
+                                            <img src={`${VITE_BASE_URL}${item.img_path}`} alt={item.name} className="img-fluid" style={{width: "100px", height: "100px"}}/>
                                         </td>
                                         <td>{item.name}</td>
                                         <td>
@@ -409,7 +410,7 @@ export default function Inventory(){
                             </div>
                             <span className="invalid-feedback">請上傳圖片</span>
                             <img src={
-                                editInventory?.new_img_path ? (editInventory?.new_img_path) : (`https://localhost:7220/${editInventory?.img_path}`)
+                                editInventory?.new_img_path ? (editInventory?.new_img_path) : (`${VITE_BASE_URL}${editInventory?.img_path}`)
                             } alt="預覽圖片" className="img-fluid mt-2"/>
                         </div>
                         {/* 名稱 */}
