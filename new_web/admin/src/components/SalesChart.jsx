@@ -76,7 +76,7 @@ export default function SalesChart({ title, data }) {
     ];
 
     return (
-        <div style={{ height: 'calc(100vh - 235px)' }}>
+        <div style={{ height: 'calc(100vh - 235px)' }} className='mt-3'>
             <Chart options={options} series={series} type="line" height="100%" />
         </div>
     );
