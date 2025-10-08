@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://localhost:7220/api";
+const API_BASE_URL = import.meta.env.VITE_BASE_URL+"api"; //取得環境變數中的API_BASE_URL
 
 const fetchData = async (url, method = 'GET', data = null) => {
     const token = sessionStorage.getItem("token"); //取得token
@@ -34,6 +34,7 @@ const fetchData = async (url, method = 'GET', data = null) => {
 
 const ApiServices = {
     getMeals: () => fetchData('/Customer/getMeals', 'GET'), //取得餐點列表
+    getRecommendMeals: (data) => fetchData(`/Customer/getRecommendMeals`, 'POST', data), //取得推薦餐點
     createOrder: (data) => fetchData('/Customer/createOrder', 'POST', data), //建立訂單
 
     login: (photo) => fetchData('/Auth/customer-login', 'POST', photo), //登入

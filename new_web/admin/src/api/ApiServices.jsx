@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://localhost:7220/api";
+const API_BASE_URL = import.meta.env.VITE_BASE_URL+"api";
 
 const fetchData = async (url, method = "GET", data = null) => {
     const token = sessionStorage.getItem("token"); //取得token
