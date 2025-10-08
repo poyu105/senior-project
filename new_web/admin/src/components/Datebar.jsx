@@ -22,7 +22,7 @@ export default function Datebar({date=new Date(), setDate, showPrevBtn=true, sho
     const nextBtnVisible = typeof showNextBtn === "function" ? showNextBtn() : showNextBtn;
     return(
         <>
-            <div className="container col-md-6 bg-secondary bg-opacity-10 rounded-3 my-3">
+            <div className="container col-md-6 bg-secondary bg-opacity-10 rounded-3">
                 <div className="d-flex justify-content-between gap-3">
                     {/* 往前一天 */}
                     <button
