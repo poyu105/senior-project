@@ -1,12 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Dapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using orderSys_bk.Data;
 using orderSys_bk.Model.Dto;
 using senior_project_web.Models;
+using System.Data;
 using System.Linq;
+using System.Net.Http;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace orderSys_bk.Controllers
 {
@@ -15,10 +20,15 @@ namespace orderSys_bk.Controllers
     public class CustomerController : ControllerBase
     {
         private readonly OrderSysDbContext _dbContext;
+
+        private readonly IDbConnection _dbConnection;
         public CustomerController(OrderSysDbContext dbContext)
         {
             _dbContext = dbContext;
+            _dbConnection = dbContext.Database.GetDbConnection();
         }
+
+        private readonly HttpClient _httpClient = new HttpClient();
 
         /// <summary>
         /// 生成隨機訂單編號
@@ -36,7 +46,7 @@ namespace orderSys_bk.Controllers
             } while (dbContext.Order.Any(o => o.order_id == newId));
 
             return newId;
-        } 
+        }
 
         //取得餐點列表
         [HttpGet("getMeals")]
@@ -66,8 +76,9 @@ namespace orderSys_bk.Controllers
                 {
                     return BadRequest(new { message = "找不到餐點" });
                 }
-                return Ok(meals);
-            }catch (Exception ex)
+                return Ok(new { success = true, meals = meals });
+            }
+            catch (Exception ex)
             {
                 return StatusCode(500, new { message = $"錯誤: {ex.Message}" });
             }
@@ -130,7 +141,7 @@ namespace orderSys_bk.Controllers
                 var newOrder = new OrderModel
                 {
                     order_id = GenerateRandomOrderId(_dbContext),
-                    date = cusDateTime,//orderDate,
+                    date = orderDate,//cusDateTime,
                     weather_condition = weather_condition,
                     season = season,
                     payment = payment,
@@ -219,8 +230,9 @@ namespace orderSys_bk.Controllers
                     .FirstOrDefaultAsync();
                 Console.WriteLine($"【CustomerController】 -> CustomerController() -> orderData: {Services.JsonServices.ToJson(orderData)}");
 
-                return Ok(new {success = true, message = "訂購成功!", o_id = newOrder.order_id, o_pay = newOrder.payment, o_t = newOrder.total, o_data = orderData});
-            } catch (Exception ex)
+                return Ok(new { success = true, message = "訂購成功!", o_id = newOrder.order_id, o_pay = newOrder.payment, o_t = newOrder.total, o_data = orderData });
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine("\n-----【ERROR】-----\n");
                 Console.WriteLine("【CustomerController】 -> CustomerController() -> 伺服器錯誤: " + ex.Message);
@@ -230,6 +242,260 @@ namespace orderSys_bk.Controllers
             finally
             {
                 Console.WriteLine("\n======【ConnectionEnd: CustomerController -> CreateOrder()】======\n");
+            }
+        }
+
+        //處理推薦餐點
+        [HttpPost("getRecommendMeals")]
+        public async Task<IActionResult> getRecommendMeals(Dictionary<String, Object> req)
+        {
+            try
+            {
+                Console.WriteLine("\n=====【ConnectionStart: CustomerController -> RecommendMeals()】=====\n");
+                Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 處理推薦餐點: req: {Services.JsonServices.ToJson(req)}");
+                if (req == null || req.Count == 0)
+                {
+                    return BadRequest(new { success = false, message = "推薦餐點失敗: 請提供資訊!" });
+                }
+
+                String user_id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "guest"; //從JWT取得user_id
+                String dateStr = req.ContainsKey("date") ? req["date"]?.ToString() : null; //日期
+                Dictionary<String, Object> location = req.ContainsKey("location") ? Services.JsonServices.ToDictionary(req["location"]) as Dictionary<String, Object> : null; //位置資訊
+                Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> user_id: {user_id}, dateStr: {dateStr}, location: {Services.JsonServices.ToJson(location)}");
+
+                if (user_id.IsNullOrEmpty() || dateStr.IsNullOrEmpty() || location == null)
+                {
+                    return BadRequest(new { success = false, message = "推薦餐點失敗: 錯誤的資訊!" });
+                }
+
+                //將字串轉成日期
+                if (!DateTime.TryParse(dateStr, out DateTime parsedDate))
+                {
+                    return BadRequest(new { success = false, message = "日期格式錯誤，請使用YYYY-MM-DD格式" });
+                }
+
+                List<Dictionary<String, Object>> meals = new List<Dictionary<String, Object>>();
+                if (user_id != "guest")
+                {
+                    String season = Services.WeatherService.getSeason(parsedDate.Month); //取得當前季節
+                    String latitudeStr = location.ContainsKey("latitude") ? location["latitude"]?.ToString() : null; //緯度
+                    String longitudeStr = location.ContainsKey("longitude") ? location["longitude"]?.ToString() : null; //經度
+                    Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> latitudeStr: {latitudeStr}, longitudeStr: {longitudeStr}");
+
+                    if (latitudeStr.IsNullOrEmpty() || longitudeStr.IsNullOrEmpty())
+                    {
+                        return BadRequest(new { success = false, message = "推薦餐點失敗: 錯誤的地理位置資訊!" });
+                    }
+
+                    double latitude = double.Parse(latitudeStr); //緯度轉double
+                    double longitude = double.Parse(longitudeStr); //經度轉double
+                    String weatherCondition = await Services.WeatherService.GetWeatherForecastAsync(dateStr, latitude, longitude); //取得天氣狀況
+                    if (weatherCondition == "N")
+                    {
+                        return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況(未知)" });
+                    }
+                    else if (string.IsNullOrEmpty(weatherCondition))
+                    {
+                        return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況" });
+                    }
+
+                    String baseOrderDataSql =
+                        @"
+                            with DailyMeals as (
+                                select
+                                    convert(varchar(8), o.date, 112) as order_date,  -- 同一天
+                                    o.user_id,
+                                    m.meal_id,
+                                    m.name,
+                                    m.type,
+                                    sum(om.amount) as total_amount
+                                from [Order] o
+                                inner join [Order_Meal] om on o.order_id = om.order_id
+                                inner join [Meal] m on om.meal_id = m.meal_id
+                                where o.user_id = @user_id
+                                group by
+                                    convert(varchar(8), o.date, 112),
+                                    o.user_id,
+                                    m.meal_id,
+                                    m.name,
+                                    m.type
+                            ),
+                            Last5Dates as (
+                                select top 5 order_date
+                                from DailyMeals
+                                group by order_date
+                                order by order_date desc
+                            )
+                        ";
+
+                    String lastFiveDateSql = baseOrderDataSql +
+                        @"
+                            select count(*) as date_count
+                            from (select distinct order_date from DailyMeals) as DistinctDates
+                            where order_date in (select order_date from Last5Dates);
+                        ";
+
+                    var lastFiveDateResult = await _dbConnection.QueryFirstOrDefaultAsync(lastFiveDateSql, new { user_id });
+                    Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> lastFiveDateResult: {Services.JsonServices.ToJson(lastFiveDateResult)}");
+                    int date_count = lastFiveDateResult != null ? Services.JsonServices.ToInt(lastFiveDateResult.date_count, 0) : 0;
+                    Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> date_count: {date_count}");
+                    if (date_count >= 5)
+                    {
+                        String userOrderedSql = baseOrderDataSql +
+                            @"
+                            select *
+                            from DailyMeals
+                            where order_date in (select order_date from Last5Dates)
+                            order by order_date desc, name;
+                        ";
+
+                        var userOrderedResult = await _dbConnection.QueryAsync(userOrderedSql, new { user_id });
+                        Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> userOrderedResult: {Services.JsonServices.ToJson(userOrderedResult)}");
+
+                        List<Dictionary<String, object>> orders = userOrderedResult.Select(r => new Dictionary<string, object>
+                        {
+                            { "order_date", r.order_date },
+                            { "user_id", r.user_id },
+                            { "meal_id", r.meal_id },
+                            { "name", r.name },
+                            { "type", r.type },
+                            { "total_amount", r.total_amount },
+                        }).ToList(); //使用者近期(5次)點過的餐點
+
+                        List<Dictionary<String, object>> dataForRecommend = new List<Dictionary<string, object>> { 
+                            new Dictionary<string, object> {
+                                { "date", dateStr },
+                                { "weather_condition", weatherCondition },
+                                { "season", season },
+                                { "orders", orders }
+                            }
+                        };
+                        Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> dataForRecommend: {Services.JsonServices.ToJson(dataForRecommend)}");
+
+                        List<Dictionary<String, Object>> recommendResult = new List<Dictionary<String, Object>>();
+                        recommendResult = await CallPythonRecommendAsync(dataForRecommend); //呼叫python進行餐點推薦
+                        Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 餐點推薦結果: {System.Text.Json.JsonSerializer.Serialize(recommendResult)}");
+
+                        if (recommendResult == null || recommendResult.Count == 0)
+                        {
+                            return BadRequest(new { success = false, message = "推薦餐點失敗: 無法取得推薦結果!" });
+                        }
+
+                        foreach (var item in recommendResult)
+                        {
+                            if (item.ContainsKey("meal_id") && item["meal_id"] != null)
+                            {
+                                String meal_id_str = item["meal_id"].ToString();
+                                Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 查詢推薦餐點的價格與圖片: meal_id_str: {meal_id_str}");
+                                if (!meal_id_str.IsNullOrEmpty())
+                                {
+                                    Guid meal_id = Guid.Parse(meal_id_str);
+                                    var meal = await _dbContext.Meal
+                                        .Where(m => m.meal_id == meal_id)
+                                        .Select(m => new Dictionary<string, object>
+                                        {
+                                            { "price", m.price },
+                                            { "img_path", m.img_path },
+                                        })
+                                        .FirstOrDefaultAsync();
+                                    if (meal != null)
+                                    {
+                                        item.Add("price", meal["price"]);
+                                        item.Add("img_path", meal["img_path"]);
+                                        Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 推薦餐點加入價格與圖片後 item: {Services.JsonServices.ToJson(item)}");
+                                    }
+                                }
+                            }
+                        }
+
+                        meals = recommendResult; //使用者近期點餐次數多於5次，回傳推薦餐點
+                    }
+                    else
+                    {
+                        //使用者近期點餐次數少於5次，回傳近期熱銷餐點
+                        meals = await recommendForGuest();
+                    }
+                }
+                else
+                {
+                    meals = await recommendForGuest();
+                }
+
+                return Ok(new { success = true, meals = meals });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("\n-----【ERROR】-----\n");
+                Console.WriteLine("【CustomerController】 -> RecommendMeals() -> 伺服器錯誤: " + ex.Message);
+                Console.WriteLine("\n-------------------\n");
+                return StatusCode(500, new { success = false, message = $"伺服器錯誤: {ex.Message}" });
+            }
+            finally
+            {
+                Console.WriteLine("\n======【ConnectionEnd: CustomerController -> RecommendMeals()】======\n");
+            }
+        }
+
+        //訪客推薦餐點(近期熱銷餐點)
+        private async Task<List<Dictionary<String, Object>>> recommendForGuest()
+        {
+            //如果是訪客就回傳過去7天的銷量排行
+            DateTime startDate = DateTime.Now.AddDays(-7); //取得7天前的日期
+            String sql =
+                @"select 
+	                dense_rank() over (order by sum(om.amount) desc) as rank,
+                    m.meal_id, 
+                    m.name, 
+                    m.description, 
+                    m.type, 
+                    m.price, 
+                    m.img_path
+                from [Order] as o
+                left join [Order_Meal] as om on o.order_id = om.order_id
+                left join [Meal] as m on om.meal_id = m.meal_id
+                where o.date >= @StartDate
+                group by m.meal_id, m.name, m.description, m.type, m.price, m.img_path
+                order by sum(om.amount) desc;";
+
+            var result = await _dbConnection.QueryAsync(sql, new { startDate });
+            Console.WriteLine($"【CustomerController】 -> recommondForGuest() -> 餐點銷量排行 result: {Services.JsonServices.ToJson(result)}");
+
+            return result.Select(r => new Dictionary<string, object>
+                   {
+                       {"rank", r.rank },
+                       { "meal_id", r.meal_id },
+                       { "name", r.name },
+                       { "description", r.description },
+                       { "type", r.type },
+                       { "price", r.price },
+                       { "img_path", r.img_path },
+                   }).ToList(); //近期(7天)熱銷餐點
+        }
+
+        //python推薦餐點
+        private async Task<List<Dictionary<String, Object>>> CallPythonRecommendAsync(List<Dictionary<String, Object>> orderData)
+        {
+            Console.WriteLine($"【CustomerController】 -> CallPythonRecommendAsync() -> 呼叫Python進行餐點推薦: orderData: {System.Text.Json.JsonSerializer.Serialize(orderData)}");
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/face-recognition", orderData);
+                Console.WriteLine($"【CustomerController】 -> CallPythonRecommendAsync() -> 呼叫Python進行餐點推薦: response: {response}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var result = await response.Content.ReadFromJsonAsync<List<Dictionary<String, Object>>>();
+                    Console.WriteLine($"【CustomerController】 -> CallPythonRecommendAsync() -> 呼叫Python進行餐點推薦: result: {Services.JsonServices.ToJson(result)}");
+                    return result;
+                }
+                else
+                {
+                    throw new Exception("Python餐點推薦服務回傳錯誤狀態碼: " + response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("呼叫Python餐點推薦失敗: " + ex.Message);
             }
         }
     }
