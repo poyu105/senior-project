@@ -8,6 +8,7 @@ using orderSys_bk.Data;
 using orderSys_bk.Model.Dto;
 using senior_project_web.Models;
 using System.Data;
+using System.Globalization;
 
 namespace orderSys_bk.Controllers
 {
@@ -410,13 +411,14 @@ namespace orderSys_bk.Controllers
                 string weatherCondition = Services.StringServices.TrimSpaces(await Services.WeatherService.GetWeatherForecastAsync(predictionDateStr, latitude, longitude)); //取得預測日期的天氣狀況
                 Console.WriteLine($"【AdminController】 -> GetPrediction() -> 預測日期的天氣狀況: {weatherCondition}");
 
-                //if (weatherCondition == "N")
-                //{
-                //    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況(未知)" });
-                //}else if(string.IsNullOrEmpty(weatherCondition))
-                //{
-                //    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況" });
-                //}
+                if (weatherCondition == "N")
+                {
+                    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況(未知)" });
+                }
+                else if (string.IsNullOrEmpty(weatherCondition))
+                {
+                    return BadRequest(new { success = false, message = "無法取得預測日期的天氣狀況" });
+                }
 
                 Console.WriteLine($"【AdminController】 -> GetPrediction() -> 預測日期的月份: {parsedDate.Month}");
                 if (parsedDate.Month < 1 || parsedDate.Month > 12)
@@ -452,6 +454,72 @@ namespace orderSys_bk.Controllers
             finally
             {
                 Console.WriteLine("======【ConnectionEnd: AdminController -> GetPrediction()】======");
+            }
+        }
+
+        //取得每日報表
+        [HttpGet("getReportData")]
+        public async Task<IActionResult> GetReportData([FromQuery] String date)
+        {
+            Console.WriteLine("=====【ConnectionStart: AdminController -> GetReportData()】=====");
+            Console.WriteLine($"【AdminController】 -> GetReportData() -> 查詢日期: {date}");
+            if (String.IsNullOrEmpty(date))
+            {
+                return BadRequest(new { success = false, message = "請提供查詢日期" });
+            }
+
+            if (!DateTime.TryParseExact(date, "yyyy/MM/dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+            {
+                return BadRequest(new { success = false, message = "日期格式錯誤，請使用 YYYY/MM/DD 格式" });
+            }
+
+            try
+            {
+                var today = parsedDate.Date;
+                var tomorrow = today.AddDays(1);
+                Console.WriteLine($"【AdminController】 -> GetReportData() -> 查詢日期區間: {today} ~ {tomorrow}");
+
+                var totalOrdersSql =
+                    @"
+                        SELECT 
+                            m.meal_id,
+                            m.name,
+                            m.cost,
+                            COALESCE(SUM(CASE WHEN o.date >= @today AND o.date < @tomorrow THEN om.amount ELSE 0 END), 0) AS total_amount,
+                            COALESCE(SUM(CASE WHEN o.date >= @today AND o.date < @tomorrow THEN om.amount * m.cost ELSE 0 END), 0) AS total_price
+                        FROM [Meal] AS m
+                        LEFT JOIN [Order_Meal] AS om ON om.meal_id = m.meal_id
+                        LEFT JOIN [Order] AS o ON o.order_id = om.order_id
+                        GROUP BY m.meal_id, m.name, m.cost
+                    ";
+                var reportData = await _dbConnection.QueryAsync(totalOrdersSql, new { today, tomorrow });
+                List<Dictionary<String, Object>> salesSummary = reportData.Select(r => new Dictionary<String, Object>
+                {
+                    { "meal_id", r.meal_id.ToString() },
+                    { "meal_name", r.name },
+                    { "cost", r.cost },
+                    { "amount", r.total_amount },
+                    { "sales", r.total_price }
+                }).ToList();
+                Console.WriteLine($"【AdminController】 -> GetReportData() -> 銷售報表資料筆數: {salesSummary.Count}");
+                Console.WriteLine($"【AdminController】 -> GetReportData() -> 銷售報表資料: {System.Text.Json.JsonSerializer.Serialize(salesSummary)}");
+
+                if (salesSummary.IsNullOrEmpty())
+                {
+                    return BadRequest(new { success = false, message = "無法取得銷售資料，請聯繫系統管理員!" });
+                }
+                return Ok(new { success = true, date = today, data = reportData });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("\n-----【ERROR】-----\n");
+                Console.WriteLine("【AdminController】 -> GetReportData() -> 伺服器錯誤: " + ex.Message);
+                Console.WriteLine("\n-------------------\n");
+                return StatusCode(500, new { message = $"伺服器錯誤: {ex.Message}" });
+            }
+            finally
+            {
+                Console.WriteLine("======【ConnectionEnd: AdminController -> GetReportData()】======");
             }
         }
     }
