@@ -29,8 +29,11 @@ const fetchData = async (url, method = "GET", data = null) => {
             return;
         }
         if(!response.ok){
-            const errorData = await response.json();
-            throw new Error(errorData.message || "API發生錯誤");
+            let errorData = { message: "API發生錯誤" };
+            if(response.message){
+                errorData = await response.json();
+            }
+            throw new Error(errorData.message);
         }
         return await response.json();
     } catch (error) {
@@ -51,6 +54,8 @@ const ApiServices = {
     editInventory: (data) => fetchData('/Admin/editInventory', 'PUT', data),  //編輯庫存資料
 
     getPrediction: (data) => fetchData('/Admin/getPrediction', 'POST', data),  //取得預測銷售資料
+
+    getReportData: (date) => fetchData(`/Admin/getReportData?date=${date}`), //取得報表資料
 }
 
 export default ApiServices;
