@@ -1,8 +1,19 @@
 import { useEffect, useState } from "react";
 import Datebar from "../components/Datebar";
+import ApiServices from "../api/ApiServices";
+import { useLoading } from "../context/LoadingContext";
 
 export default function DailyReport(){
+    const {loading, setLoading} = useLoading();
     const [date, setDate] = useState(new Date()); //日期(預設今天)
+    const canEdit = date >= new Date(new Date().setHours(0,0,0,0)); //是否可編輯(今天或未來)
+    //日期轉換格式
+    const formatDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}/${month}/${day}`;
+    }
 
     //取得使用者位置
     const [location, setLocation] = useState({ latitude: 25.0478, longitude: 121.5319 });
@@ -27,6 +38,21 @@ export default function DailyReport(){
         }
     }, []);
 
+    const [reportData, setReportData] = useState([]); //報表資料
+    //取得報表資料
+    const getReportData = async (date)=>{
+        setLoading(true);
+        const response = await ApiServices.getReportData(formatDate(date));
+        if(response){
+            setReportData(response.data);
+        }
+        setLoading(false);
+    }
+    //取得報表資料(初次渲染or日期改變)
+    useEffect(()=>{
+        getReportData(date);
+    }, [date]);
+
     return(
         <>
             <Datebar 
@@ -48,6 +74,9 @@ export default function DailyReport(){
                     </p>
                     <button
                         className="btn btn-success p-1 mb-1"
+                        onClick={()=>{
+                            getReportData(date);
+                        }}
                     >
                         刷新報表
                     </button>
@@ -68,26 +97,46 @@ export default function DailyReport(){
                                 <th>銷售金額</th>
                             </tr>
                         </thead>
+                        {/* 表格輸入 */}
                         <tbody>
-                            {Array.from({ length: 20 }).map((_, i) => (
+                            {reportData.map((d, i) => (
                             <tr key={i}>
-                                <td>範例商品B</td>
-                                <td>400</td>
+                                {/* 餐點名稱 */}
+                                <td>{d.name}</td>
+                                {/* 單價 */}
+                                <td>{d.cost}</td>
+                                {/* 今日銷售數量 */}
                                 <td
                                     style={{width: "200px"}}
                                 >
-                                    <input
-                                        id={`salesAmountInput-${i}`}
-                                        type="number"
-                                        className="form-control text-center"
-                                        style={{lineHeight: "1"}}
-                                        defaultValue={0} 
-                                        min={0}
-                                        readOnly={date < new Date(new Date().setHours(0,0,0,0))} //過去日期不可編輯
-                                    />
+                                    {
+                                        !canEdit ? //過去日期不可編輯
+                                        <span className="text-secondary">{d.total_amount}</span> :
+                                        <input
+                                            id={`salesAmountInput-${i}`}
+                                            type="number"
+                                            className="form-control text-center"
+                                            style={{lineHeight: "1"}}
+                                            value={d.total_amount} 
+                                            min={0}
+                                            readOnly={!canEdit} //過去日期不可編輯
+                                            onChange={(e)=>{
+                                                const value = e.target.value;
+                                                if(value === "" || isNaN(value) || parseInt(value) < 0){
+                                                    return;
+                                                }else{
+                                                    const newReportData = [...reportData];
+                                                    newReportData[i].total_amount = parseInt(value);
+                                                    newReportData[i].total_price = newReportData[i].cost * parseInt(value);
+                                                    setReportData(newReportData);
+                                                }
+                                            }}
+                                        />
+                                    }
                                 </td>
+                                {/* 銷售金額 */}
                                 <td>
-                                    0
+                                    {d.total_price}
                                 </td>
                             </tr>
                             ))}
@@ -100,11 +149,15 @@ export default function DailyReport(){
                         <tbody>
                             <tr className="table-secondary">
                                 <th>總銷售數量</th>
-                                <td>22</td>
+                                <td>
+                                    {reportData.reduce((sum, item) => sum + item.total_amount, 0)}
+                                </td>
                             </tr>
                             <tr className="table-secondary">
                                 <th>總銷售金額</th>
-                                <td>8000</td>
+                                <td>
+                                    {reportData.reduce((sum, item) => sum + item.total_price, 0)}
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -112,11 +165,11 @@ export default function DailyReport(){
                 {/* 儲存按鈕 */}
                 <div 
                     className="text-center mt-2"
-                    style={{visibility: date < new Date(new Date().setHours(0,0,0,0)) ? "hidden" : "visible"}} //過去日期不顯示
+                    style={{visibility: canEdit ? "visible" : "hidden"}} //過去日期不顯示
                 >
                     <button
                         className="btn btn-primary"
-                        disabled={date < new Date(new Date().setHours(0,0,0,0))} //過去日期不可編輯
+                        disabled={!canEdit} //過去日期不可編輯
                     >
                         儲存
                     </button>
