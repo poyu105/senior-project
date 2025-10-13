@@ -1,0 +1,72 @@
+[
+  {
+    "date": "2025-09-15",
+    "weather_condition": "S",
+    "season": "au",
+    "orders": [
+      {"order_date":"20250915","user_id":"guest","meal_id":"m1","name":"辛辣麵","type":"spicy","total_amount":12},
+      {"order_date":"20250915","user_id":"guest","meal_id":"m2","name":"來一客-海鮮泡麵","type":"seafood","total_amount":8},
+      {"order_date":"20250915","user_id":"guest","meal_id":"m3","name":"隨緣-筍茸之味湯麵","type":"vegetarian","total_amount":3}
+    ]
+  },
+  {
+    "date": "2025-09-16",
+    "weather_condition": "R",
+    "season": "au",
+    "orders": [
+      {"order_date":"20250916","user_id":"guest","meal_id":"m1","name":"辛辣麵","type":"spicy","total_amount":6},
+      {"order_date":"20250916","user_id":"guest","meal_id":"m2","name":"來一客-海鮮泡麵","type":"seafood","total_amount":4},
+      {"order_date":"20250916","user_id":"guest","meal_id":"m3","name":"隨緣-筍茸之味湯麵","type":"vegetarian","total_amount":10}
+    ]
+  },
+  {
+    "date": "2025-09-17",
+    "weather_condition": "C",
+    "season": "au",
+    "orders": [
+      {"order_date":"20250917","user_id":"guest","meal_id":"m1","name":"辛辣麵","type":"spicy","total_amount":4},
+      {"order_date":"20250917","user_id":"guest","meal_id":"m2","name":"來一客-海鮮泡麵","type":"seafood","total_amount":14},
+      {"order_date":"20250917","user_id":"guest","meal_id":"m3","name":"隨緣-筍茸之味湯麵","type":"vegetarian","total_amount":2}
+    ]
+  },
+  {
+    "date": "2025-09-18",
+    "weather_condition": "S",
+    "season": "au",
+    "orders": [
+      {"order_date":"20250918","user_id":"guest","meal_id":"m1","name":"辛辣麵","type":"spicy","total_amount":8},
+      {"order_date":"20250918","user_id":"guest","meal_id":"m2","name":"來一客-海鮮泡麵","type":"seafood","total_amount":6},
+      {"order_date":"20250918","user_id":"guest","meal_id":"m3","name":"隨緣-筍茸之味湯麵","type":"vegetarian","total_amount":5}
+    ]
+  },
+  {
+    "date": "2025-09-19",
+    "weather_condition": "R",
+    "season": "au",
+    "orders": [
+      {"order_date":"20250919","user_id":"guest","meal_id":"m1","name":"辛辣麵","type":"spicy","total_amount":10},
+      {"order_date":"20250919","user_id":"guest","meal_id":"m2","name":"來一客-海鮮泡麵","type":"seafood","total_amount":7},
+      {"order_date":"20250919","user_id":"guest","meal_id":"m3","name":"隨緣-筍茸之味湯麵","type":"vegetarian","total_amount":6}
+    ]
+  },
+  {
+    "date": "2025-09-20",
+    "weather_condition": "S",
+    "season": "au",
+    "orders": [
+      {"order_date":"20250920","user_id":"guest","meal_id":"m1","name":"辛辣麵","type":"spicy","total_amount":15},
+      {"order_date":"20250920","user_id":"guest","meal_id":"m2","name":"來一客-海鮮泡麵","type":"seafood","total_amount":10},
+      {"order_date":"20250920","user_id":"guest","meal_id":"m3","name":"隨緣-筍茸之味湯麵","type":"vegetarian","total_amount":3}
+    ]
+  },
+  {
+    "date": "2025-09-21",
+    "weather_condition": "C",
+    "season": "au",
+    "orders": [
+      {"order_date":"20250921","user_id":"guest","meal_id":"m1","name":"辛辣麵","type":"spicy","total_amount":7},
+      {"order_date":"20250921","user_id":"guest","meal_id":"m2","name":"來一客-海鮮泡麵","type":"seafood","total_amount":12},
+      {"order_date":"20250921","user_id":"guest","meal_id":"m3","name":"隨緣-筍茸之味湯麵","type":"vegetarian","total_amount":4}
+    ]
+  }
+]
