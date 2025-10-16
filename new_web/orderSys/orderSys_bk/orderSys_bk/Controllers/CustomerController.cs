@@ -479,14 +479,15 @@ namespace orderSys_bk.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/face-recognition", orderData);
+                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/recommend", orderData);
                 Console.WriteLine($"【CustomerController】 -> CallPythonRecommendAsync() -> 呼叫Python進行餐點推薦: response: {response}");
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<List<Dictionary<String, Object>>>();
-                    Console.WriteLine($"【CustomerController】 -> CallPythonRecommendAsync() -> 呼叫Python進行餐點推薦: result: {Services.JsonServices.ToJson(result)}");
-                    return result;
+                    var result = await response.Content.ReadFromJsonAsync<Dictionary<String, Object>>();
+                    List<Dictionary<String, Object>> meals = result != null && result.ContainsKey("orders") ? Services.JsonServices.ToListOfDictionary(result["orders"]) as List<Dictionary<String, Object>> : new List<Dictionary<String, Object>>();
+                    Console.WriteLine($"【CustomerController】 -> CallPythonRecommendAsync() -> 呼叫Python進行餐點推薦: meals: {Services.JsonServices.ToJson(meals)}");
+                    return meals;
                 }
                 else
                 {
