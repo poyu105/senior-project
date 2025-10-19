@@ -1,0 +1,7 @@
+{
+    "last_trained_on": "2025-10-19 14:04:19",
+    "training_data_rows": 599,
+    "mae": 5.656,
+    "rmse": 8.3585,
+    "r2_score": 0.7208
+}

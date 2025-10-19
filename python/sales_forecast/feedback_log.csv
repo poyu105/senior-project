@@ -1,0 +1,16 @@
+date,meal_id,name,type,predicted_amount,real_amount,weather,season
+2025-09-14,4ddef869-93af-4af6-80cb-1ac7afa99ba5,來一客-海鮮泡麵,seafood,58,5,R,au
+2025-09-14,c61786c0-803e-42eb-aca1-6529ebd611ef,辛拉麵,spicy,12,10,R,au
+2025-09-14,c7033ce2-62ca-4cd6-ba43-d5fec049d462,隨緣-椎茸之味湯麵,vegetarian,15,8,R,au
+2025-09-14,4ddef869-93af-4af6-80cb-1ac7afa99ba5,來一客-海鮮泡麵,seafood,58,5,R,au
+2025-09-14,c61786c0-803e-42eb-aca1-6529ebd611ef,辛拉麵,spicy,12,10,R,au
+2025-09-14,c7033ce2-62ca-4cd6-ba43-d5fec049d462,隨緣-椎茸之味湯麵,vegetarian,15,8,R,au
+2025-09-14,4ddef869-93af-4af6-80cb-1ac7afa99ba5,來一客-海鮮泡麵,seafood,58,5,R,au
+2025-09-14,c61786c0-803e-42eb-aca1-6529ebd611ef,辛拉麵,spicy,12,10,R,au
+2025-09-14,c7033ce2-62ca-4cd6-ba43-d5fec049d462,隨緣-椎茸之味湯麵,vegetarian,15,8,R,au
+2025-09-14,4ddef869-93af-4af6-80cb-1ac7afa99ba5,來一客-海鮮泡麵,seafood,58,5,R,au
+2025-09-14,c61786c0-803e-42eb-aca1-6529ebd611ef,辛拉麵,spicy,12,10,R,au
+2025-09-14,c7033ce2-62ca-4cd6-ba43-d5fec049d462,隨緣-椎茸之味湯麵,vegetarian,15,8,R,au
+2025-09-14,4ddef869-93af-4af6-80cb-1ac7afa99ba5,來一客-海鮮泡麵,seafood,58,5,n,au
+2025-09-14,c61786c0-803e-42eb-aca1-6529ebd611ef,辛拉麵,spicy,12,10,n,au
+2025-09-14,c7033ce2-62ca-4cd6-ba43-d5fec049d462,隨緣-椎茸之味湯麵,vegetarian,15,8,n,au
