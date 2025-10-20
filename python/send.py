@@ -1,4 +1,10 @@
 from flask import Flask, request, jsonify
+import sklearn
+import pandas
+import numpy
+import importlib.metadata
+
+flask_version = importlib.metadata.version("flask")
 
 app = Flask(__name__)
 
@@ -36,7 +42,8 @@ def face_recognition_api():
 
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-
+    finally:
+        print("=== 人臉辨識請求處理完畢 ===")
 ##################
 
 ### 推薦餐點API ###
@@ -55,8 +62,56 @@ def api_recommend():
         return jsonify(result)
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
-    
+    finally:
+        print("=== 推薦餐點請求處理完畢 ===")
 ##################
 
+### 銷售預測API ###
+from sales_forecast import difference_model
+@app.route("/sales-forecast", methods=["POST"])
+def process_data():
+    print("=== 收到銷售預測請求 ===")
+    try:
+        data = request.get_json()
+        sales_data = data.get("sales_data")
+        prediction_data = data.get("prediction_data")
+        
+        if not sales_data or not prediction_data:
+            return jsonify({"success": False, "errors": "請求中缺少 'sales_data' 或 'prediction_data'"}), 400
+        
+        success, result, msg = difference_model.predict_sales(sales_data, prediction_data) # 呼叫模型預測函式
+        
+        return jsonify({"success": success, "result": result, "msg": msg})
+    except Exception as e:
+        print(f"send發生例外錯誤{str(e)}")
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        print("=== 銷售預測請求處理完畢 ===")
+##################
+
+### 模型更新API ###
+@app.route("/feedback", methods=["POST"])
+def feedback():
+    print("=== 收到模型更新請求 ===")
+    try:
+        data = request.get_json()
+        message, error, status_code = difference_model.handle_feedback(data) # 處理回饋並更新模型
+
+        return jsonify({"message": message}), status_code
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        print("=== 模型更新請求處理完畢 ===")
+##################
+
+# --- 主程式 ---
 if __name__ == "__main__":
+    print("===== 啟動 Flask 伺服器中，請在本機 5000 port 進行 API 測試。 =====")
+    print("===== 版本資訊 =====")
+    print(f"flask 版本: {flask_version}")
+    print(f"sklearn 版本: {sklearn.__version__}")
+    print(f"pandas 版本: {pandas.__version__}")
+    print(f"numpy 版本: {numpy.__version__}")
+    print("====================")
     app.run(host="0.0.0.0", port=5000)
+    print("===== Flask 伺服器已停止。 =====")
