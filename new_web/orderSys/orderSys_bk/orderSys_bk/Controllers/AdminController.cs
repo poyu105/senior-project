@@ -267,7 +267,7 @@ namespace orderSys_bk.Controllers
         /// <param name="salesReportsFromDB">過去10天的銷售紀錄[{第X天、餐點id、餐點類型、天氣狀況、季節、銷售數量}]</param>
         /// <param name="predictionData">預測當天日期、天氣狀況、季節</param>
         /// <returns>預測銷售資料</returns>
-        private async Task<List<Dictionary<String, Object>>> CallPythonPredictionAsync(List<Dictionary<String, Object>> salesReportsFromDB, Dictionary<String, Object> predictionData)
+        private async Task<Dictionary<String, Object>> CallPythonPredictionAsync(List<Dictionary<String, Object>> salesReportsFromDB, Dictionary<String, Object> predictionData)
         {
             Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: salesReportsFromDB: {System.Text.Json.JsonSerializer.Serialize(salesReportsFromDB)}, predictionData: {System.Text.Json.JsonSerializer.Serialize(predictionData)}");
             var payload = new
@@ -279,14 +279,45 @@ namespace orderSys_bk.Controllers
 
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/face-recognition", payload);
+                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/sales-forecast", payload);
                 Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: response: {response}");
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<List<Dictionary<String, Object>>>();
-                    Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: result: {System.Text.Json.JsonSerializer.Serialize(result)}");
-                    return result;
+                    var res = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+                    bool success = false;
+                    string msg = "";
+
+                    if (res != null)
+                    {
+                        if (res.ContainsKey("success"))
+                            bool.TryParse(res["success"]?.ToString(), out success);
+
+                        if (res.ContainsKey("msg"))
+                            msg = res["msg"]?.ToString() ?? "";
+
+                        Dictionary<string, object> result = null;
+                        if (res.ContainsKey("result"))
+                            result = Services.JsonServices.ToDictionary(res["result"]);
+
+                        Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: success: {success}");
+                        Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: msg: {msg}");
+                        Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行銷售預測: result: {System.Text.Json.JsonSerializer.Serialize(result)}");
+                        if (success)
+                        
+                        {
+                            return result;
+                        }
+                        else
+                        {
+                            throw new Exception(msg);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("回傳資料為空!");
+                    }
+
                 }
                 else
                 {
@@ -332,7 +363,7 @@ namespace orderSys_bk.Controllers
                 }
 
                 DateTime today = DateTime.Today; //今天日期
-                Console.WriteLine($"AdminController -> GetPrediction() -> 今天日期: {today.ToString("yyyy-MM-dd")}, 預測日期: {parsedDate.ToString("yyyy-MM-dd")}");
+                Console.WriteLine($"AdminController -> GetPrediction() -> 今天日期: {today.ToString("yyyyMMdd")}, 預測日期: {parsedDate.ToString("yyyyMMdd")}");
                 //可預測範圍: 今天~3天內
                 if (parsedDate < today)
                 {
@@ -378,6 +409,7 @@ namespace orderSys_bk.Controllers
                             m.meal_id,
                             m.name,
                             m.type,
+                            m.cost,
                             ISNULL(dms.amount, 0) AS amount,
                             dms.weatherCondition,
                             dms.season
@@ -392,10 +424,11 @@ namespace orderSys_bk.Controllers
                 var result = await _dbConnection.QueryAsync(sql, new { startDate, endDate });
                 List<Dictionary<String,Object>> salesReportsFromDB = result.Select(r => new Dictionary<String, Object>
                 {
-                    { "date", r.date },
+                    { "date", r.date }, //yyyyMMdd
                     { "meal_id", r.meal_id },
                     { "name", r.name },
                     { "type", r.type },
+                    { "cost", r.cost },
                     { "amount", r.amount },
                     { "weather", Services.StringServices.TrimSpaces(r.weatherCondition) },
                     { "season", r.season }
@@ -438,7 +471,7 @@ namespace orderSys_bk.Controllers
                     { "season", season }
                 };
 
-                List<Dictionary<String, Object>> predictionResult = new List<Dictionary<String, Object>>();
+                Dictionary<String, Object> predictionResult = new Dictionary<String, Object>();
                 predictionResult = await CallPythonPredictionAsync(salesReportsFromDB, predictionData); //呼叫python進行銷售預測
                 Console.WriteLine($"【AdminController】 -> GetPrediction() -> 銷售預測結果: {System.Text.Json.JsonSerializer.Serialize(predictionResult)}");
 
