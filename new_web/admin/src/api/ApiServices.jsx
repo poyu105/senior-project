@@ -28,14 +28,20 @@ const fetchData = async (url, method = "GET", data = null) => {
             window.location.reload();
             return;
         }
-        if(!response.ok){
-            let errorData = { message: "API發生錯誤" };
-            if(response.message){
-                errorData = await response.json();
-            }
-            throw new Error(errorData.message);
+
+        let data;
+        try {
+            data = await response.json();
+        } catch {
+            data = null; // 如果不是 JSON 就設為 null
         }
-        return await response.json();
+
+        if (!response.ok) {
+            const errorMessage = data && data.message ? data.message : "API發生錯誤";
+            throw new Error(errorMessage);
+        }
+
+        return await data;
     } catch (error) {
         console.error("發生錯誤: "+error.message);
         alert(error.message);
