@@ -45,10 +45,13 @@ export default function Prediction(){
                 latitude: location.latitude, 
                 longitude: location.longitude
             };
-            console.log(data);
             const res = await ApiServices.getPrediction(data);
             if(res){
-                setPredictionSales(res);
+                if(res.success){
+                    setPredictionSales(res.data.prediction_list ?? []);
+                }else{
+                    alert(res.message);
+                }
             }
             setLoading(false);
         };
