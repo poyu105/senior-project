@@ -11,10 +11,11 @@ from collections import OrderedDict
 import numpy as np
 
 # --- 檔案設定 ---
-SALES_FILE = "sales_data.csv"
-FEEDBACK_FILE = "feedback_log.csv"
-MODEL_FILE = "sales_model.pkl"
-METRICS_FILE = "model_metrics.json" 
+BASE_FILE_PATH = os.path.dirname(os.path.abspath(__file__)) # 取得目前檔案所在目錄
+SALES_FILE = os.path.join(BASE_FILE_PATH, "sales_data.csv")
+FEEDBACK_FILE = os.path.join(BASE_FILE_PATH, "feedback_log.csv")
+MODEL_FILE = os.path.join(BASE_FILE_PATH, "sales_model.pkl")
+METRICS_FILE = os.path.join(BASE_FILE_PATH, "model_metrics.json") 
 
 # --- 核心商業邏輯 ---
 
@@ -39,8 +40,10 @@ def _preprocess_data(df):
 
 def train_model():
     """使用 SALES_FILE 的資料來訓練或重新訓練模型，並評估準確度"""
+    print("正在檢查訓練資料檔案路徑：", os.path.abspath(SALES_FILE))
     if not os.path.exists(SALES_FILE):
-        return None, "找不到 sales_data.csv，無法訓練模型。", 404
+        print(f"錯誤：找不到 {SALES_FILE}，無法訓練模型。")
+        return False, None, "找不到 sales_data.csv，無法訓練模型。"
     try:
         df = pd.read_csv(SALES_FILE)
         df = _preprocess_data(df)
@@ -86,37 +89,38 @@ def train_model():
             print(f"計算模型準確度時發生錯誤: {e}")
         # --- 新增程式碼結束 ---
 
-        return (model, encoders), None, 200
+        return True, (model, encoders), None
     except Exception as e:
         error_msg = f"模型訓練失敗: {repr(e)}"
         print(error_msg)
-        return None, error_msg, 500
+        return False, None, error_msg
 
 
 def predict_sales(sales_data, prediction_data):
     """根據提供的歷史資料和預測目標，進行銷售預測"""
+    print("正在檢查模型檔案路徑：", MODEL_FILE)
     if not os.path.exists(MODEL_FILE):
         print("模型檔案不存在，正在進行首次訓練...")
-        _, error, status_code = train_model()
-        if error:
-            return None, error, status_code
+        success, result, msg = train_model()
+        if not success:
+            return False, result, msg
     
     try:
         model, encoders = joblib.load(MODEL_FILE)
         if hasattr(model, 'feature_names_in_') and 'name' in model.feature_names_in_:
             print("偵測到舊版模型 (包含 'name' 特徵)，將刪除並重新訓練...")
             os.remove(MODEL_FILE)
-            _, error, status_code = train_model()
-            if error:
-                return None, f"刪除舊模型後重新訓練失敗: {error}", status_code
+            success, result, msg = train_model()
+            if not success:
+                return False, result, f"刪除舊模型後重新訓練失敗: {msg}"
             model, encoders = joblib.load(MODEL_FILE)
     except Exception as e:
         print(f"載入模型失敗 ({e})，嘗試刪除並重新訓練...")
         if os.path.exists(MODEL_FILE):
             os.remove(MODEL_FILE)
-        _, error, status_code = train_model()
-        if error:
-            return None, f"刪除損毀模型後重新訓練失敗: {error}", status_code
+        success, result, msg = train_model()
+        if not success:
+            return False, result, f"刪除損毀模型後重新訓練失敗: {msg}"
         model, encoders = joblib.load(MODEL_FILE)
 
     try:
@@ -124,21 +128,22 @@ def predict_sales(sales_data, prediction_data):
         target_weather = prediction_data.get('weather')
         
         if not all([target_date_str, target_weather]):
-            return None, "prediction_data 中缺少 'date' 或 'weather'", 400
+            return False, None, "prediction_data 中缺少 'date' 或 'weather'"
 
         try:
             target_date = datetime.strptime(target_date_str, '%Y-%m-%d')
         except ValueError:
-            return None, f"預測日期格式不正確: {target_date_str}，應為 YYYY-MM-DD", 400
+            return False, None, f"預測日期格式不正確: {target_date_str}，應為 YYYY-MM-DD"
         
-        target_season = get_season(target_date)
+        target_season = prediction_data.get('season')
+
         is_weekend_target = 1 if target_date.weekday() >= 5 else 0
 
         past_df = pd.DataFrame(sales_data)
-        unique_meals = past_df[['meal_id', 'type']].drop_duplicates()
+        unique_meals = past_df[['meal_id', 'type', 'name', 'cost']].drop_duplicates()
 
         if unique_meals.empty:
-            return None, "提供的 sales_data 為空或無效", 400
+            return False, None, "提供的 sales_data 為空或無效"
 
         predict_df = unique_meals.copy()
         predict_df['weather'] = target_weather
@@ -151,7 +156,7 @@ def predict_sales(sales_data, prediction_data):
             if le:
                 X_pred[col] = X_pred[col].apply(lambda x: le.transform([x])[0] if x in le.classes_ else -1)
             else:
-                return None, f"模型中缺少 '{col}' 的編碼器", 500
+                return False, None, f"模型中缺少 '{col}' 的編碼器"
         
         X_pred_valid = X_pred[~X_pred.isin([-1]).any(axis=1)]
         prediction_list = []
@@ -161,22 +166,25 @@ def predict_sales(sales_data, prediction_data):
             prediction_list = [
                 {
                     "meal_id": row['meal_id'],
-                    "predicted_sales_quantity": int(round(row.get('predicted_amount', 0)))
+                    "name": row['name'],
+                    "sales": int(round(row.get('predicted_amount', 0))) * int(round(row.get('cost', 0))),
+                    "cost": row["cost"],
+                    "amount": int(round(row.get('predicted_amount', 0)))
                 }
                 for _, row in predict_df.iterrows()
             ]
 
-        result = OrderedDict([
-            ("forecast_date", target_date_str),
-            ("season", target_season),
-            ("weather", target_weather),
-            ("prediction_list", prediction_list)
-        ])
+        result = {
+            "forecast_date": target_date_str,
+            "season": target_season,
+            "weather": target_weather,
+            "prediction_list": prediction_list
+        }
         
-        return result, None, 200
+        return True, result, None
 
     except Exception as e:
-        return None, f"預測過程中發生錯誤: {repr(e)}", 500
+        return False, None, f"預測過程中發生錯誤: {repr(e)}"
 
 
 def update_model_with_feedback(new_records_df):
