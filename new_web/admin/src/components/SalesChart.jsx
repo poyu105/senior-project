@@ -25,7 +25,7 @@ export default function SalesChart({ title, data }) {
             enabled: true,
         },
         xaxis: {
-            categories: data.map(item => item.meal_name),
+            categories: data.map(item => item.name),
             labels: {
                 rotate: -45,
                 style: {
@@ -58,7 +58,7 @@ export default function SalesChart({ title, data }) {
             '#795548', '#607D8B'
         ],
         legend: {
-            show: true,
+            show: false,
         },
     };
 
@@ -72,6 +72,11 @@ export default function SalesChart({ title, data }) {
             name: '銷售額',
             type: 'line',
             data: data.map(item => item.sales),
+        },
+        {
+            name: '單價',
+            type: 'none',
+            data: data.map(item => item.cost),
         },
     ];
 
