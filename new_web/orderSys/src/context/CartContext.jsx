@@ -13,7 +13,7 @@ export function CartProvider({children}){
     },[cartItems])
     
     //新增至購物車
-    const addToCart = (id, name, type, description, price, amount) => {
+    const addToCart = (id, img_path, name, type, description, price, amount) => {
         try {
             setLoading(true);
             setCartItems((prev) => {
@@ -25,7 +25,7 @@ export function CartProvider({children}){
                             : item
                     );
                 } else {
-                    return [...prev, { id, name, type, description, price, amount }];
+                    return [...prev, { id, img_path, name, type, description, price, amount }];
                 }
             });
             alert('成功加入購物車!');

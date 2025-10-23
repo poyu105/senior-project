@@ -7,12 +7,13 @@ import Card from "../components/Card";
 import Modal from "../components/Modal";
 import { useCart } from "../context/CartContext";
 import { useUser } from "../context/UserContext";
+import Header from "../components/Header";
 
 const VITE_BASE_URL = import.meta.env.VITE_BASE_URL;
 
 export default function Home(){
     const { setLoading } = useLoading();
-    const { addToCart } = useCart(); //購物車Context
+    const { addToCart, clearCart } = useCart(); //購物車Context
     const { user, login, register, logout } = useUser(); //用戶Context
     
     const [meals, setMeals] = useState([]); //餐點列表
@@ -107,7 +108,7 @@ export default function Home(){
 
     //處理新增至購物車
     const handleAddToCart = () => {
-        addToCart(mealInfo.id, mealInfo.name, mealInfo.type, mealInfo.description, mealInfo.price, amount); //加入購物車
+        addToCart(mealInfo.id, mealInfo.img_path, mealInfo.name, mealInfo.type, mealInfo.description, mealInfo.price, amount); //加入購物車
         setAmount(1); //重置數量
         setShowAddCartModal(false); //關閉加入購物車Modal
     }
@@ -187,111 +188,185 @@ export default function Home(){
         setShowRegisterCamera(true);
     }
 
+    const { cartItems } = useCart();
+    const [cartCount, setCartCount] = useState(0); //購物車中物品數量
+
+    //監控購物車變化並設定購物車中物品數量
+    useEffect(()=>{
+        setCartCount(cartItems?.length);
+    },[cartItems])
+
+    const [showCartModal, setshowCartModal] = useState(false); //顯示購物車
+    const [paymentMethod, setPaymentMethod] = useState("cash"); //付款方式
+    const [orderResult, setOrderResult] = useState(); //訂購結果
+    //處理送出訂單
+    const handleSendOrder = async ()=>{
+        try {
+            setLoading(true);
+            const data = {
+                orders: cartItems?.map(item => ({
+                    meal_id: item.id,
+                    name: item.name,
+                    amount: item.amount,
+                })),
+                payment: paymentMethod,
+                total: cartItems?.reduce((total, item) => total + (item.price * item.amount), 0),
+                user_id: user,
+                location: location,
+            };
+            const res = await ApiServices.createOrder(data);
+            if(res){
+                setOrderResult(res);
+                setShowOrderResultModal(true);
+                //清空購物車
+                clearCart();
+                logout();
+            }
+        } catch (error) {
+            console.error(`訂單送出失敗:${error}`);
+            alert(`訂單送出失敗${error}`);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const [showOrderResultModal, setShowOrderResultModal] = useState(false); //顯示訂單結果modal
+
     return(
         <>
             {/* 主要內容區 */}
-            <div className="d-flex" style={{height: "calc(100vh - 175px)"}}>
+            <div className="app-container">
                 {/* Sidebar */}
-                <div className="col-2 text-center">
+                <div className="sidebar bg-white">
+                    <div className="mt-3 border-bottom">
+                        <a href="/" className="text-decoration-none">
+                            <h1 className="fw-bold" style={{color: "#ea580c"}}>食得其所</h1>
+                        </a>
+                        <p className="text-secondary mb-1">無人泡麵點餐系統</p>
+                    </div>
                     <Sidebar selectType={selectType} setSelectType={setSelectType}/>
-                    {
-                        user ? (
-                            <>
-                                <p className="mt-3">登入成功，請點餐!</p>
-                                {/* 登入Btn */}
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary w-100 mb-2"
-                                    onClick={()=>{
-                                        logout();
-                                    }}>
-                                    登出
-                                </button>
-                            </>
+                    <div className="mt-5">
+                        {
+                            user ? (
+                                <>
+                                    <p className="mt-3">登入成功，請點餐!</p>
+                                    {/* 登出Btn */}
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary w-100 mb-2"
+                                        onClick={()=>{
+                                            logout();
+                                        }}>
+                                        登出
+                                    </button>
+                                </>
 
-                        ) : (
-                            <>
-                                {/* 登入Btn */}
-                                <button
-                                    type="button"
-                                    className="btn btn-warning w-100 mb-2"
-                                    onClick={()=>{
-                                        setShowLoginModal(true);
-                                    }}>
-                                    快速登入
-                                </button>
-                                {/* 註冊Btn */}
-                                <button
-                                    type="button"
-                                    className="btn btn-outline-secondary w-100 mt-2"
-                                    onClick={()=>{
-                                        setShowRegisterModal(true);
-                                    }}>
-                                    註冊
-                                </button>
-                            </>
-                        )
-                    }
+                            ) : (
+                                <>
+                                    {/* 登入Btn */}
+                                    <button
+                                        type="button"
+                                        className="action-button login"
+                                        onClick={()=>{
+                                            setShowLoginModal(true);
+                                        }}>
+                                        快速登入
+                                    </button>
+                                    {/* 註冊Btn */}
+                                    <button
+                                        type="button"
+                                        className="action-button register"
+                                        onClick={()=>{
+                                            setShowRegisterModal(true);
+                                        }}>
+                                        註冊
+                                    </button>
+                                </>
+                            )
+                        }
+                        {/* 購物車Btn */}
+                        <button
+                            type="button"
+                            className="action-button cart"
+                            onClick={()=>{
+                                setshowCartModal(true);
+                            }}>
+                            <i className="bi bi-cart"></i>
+                            購物車
+                            {cartCount >0 && (
+                                <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
                 {/* 餐點Card */}
-                <div className="mx-auto p-0 col-9">
-                    <div className={`${selectType == "recommend" && recommendMeals.length == 0 ? "h-100" : "card-grid"} border border-2 border-warning rounded-4`}>
-                        {
-                            //推薦餐點
-                            selectType == "recommend" && (recommendMeals.length > 0 ? (
-                                recommendMeals.map((meal, index) => (
-                                    <Card
-                                        key={index}
-                                        showImg={true}
-                                        imgPath={`${VITE_BASE_URL}${meal.img_path}`}
-                                        title={meal.name}
-                                        onClickFunc={()=>{
-                                                setShowAddCartModal(true)
-                                                setMealInfo(meal);
-                                            }}>
-                                        <ul className="list-unstyled text-secondary" style={{fontSize: "14px"}}>
-                                            <li>餐點類型: {meal.type}</li>
-                                            <li>
-                                                餐點介紹:
-                                                <p>{meal.description}</p>
-                                            </li>
-                                        </ul>
-                                        <div className="d-flex flex-row justify-content-between align-items-center gap-2">
-                                            <p className="card-text fs-5 m-0">NT$ {meal.price}</p>
-                                            <button className="btn bg-light border">
-                                                <i className="bi bi-cart-plus"></i>
-                                            </button>
-                                        </div>
-                                    </Card>
-                            ))) : (
-                                <p className="fs-4 text-secondary text-center my-3">今日推薦餐點尚未推出，請選擇其他分類!</p>
-                            ))
-                        }
-                        {meals.filter(meal => selectType == "all" ? meal : meal.type == selectType).map((meal, index) => (
-                            <Card
-                                key={index}
-                                showImg={true}
-                                imgPath={`${VITE_BASE_URL}${meal.img_path}`}
-                                title={meal.name}
-                                onClickFunc={()=>{
-                                        setShowAddCartModal(true)
-                                        setMealInfo(meal);
-                                    }}>
-                                <ul className="list-unstyled text-secondary" style={{fontSize: "14px"}}>
-                                    <li>餐點類型: {meal.type}</li>
-                                    <li>
-                                        餐點介紹:
-                                        <p>{meal.description}</p>
-                                    </li>
-                                </ul>
-                                <div className="d-flex flex-row justify-content-between align-items-center gap-2">
-                                    <p className="card-text fs-5 m-0">NT$ {meal.price}</p>
-                                    <button className="btn bg-light border">
-                                        <i className="bi bi-cart-plus"></i>
-                                    </button>
-                                </div>
-                            </Card>
-                        ))}
+                <div className="mx-auto p-0 col-9 d-flex flex-column overflow-hidden">
+                    <Header selectType={selectType} />
+                    <div className="flex-fill overflow-auto">
+                        <div className={`${selectType == "recommend" && recommendMeals.length == 0 ? "h-100" : "card-grid"}`}>
+                            {
+                                //推薦餐點
+                                selectType == "recommend" && (recommendMeals.length > 0 ? (
+                                    recommendMeals.map((meal, index) => (
+                                        <Card
+                                            key={index}
+                                            showImg={true}
+                                            imgPath={`${VITE_BASE_URL}${meal.img_path}`}
+                                            title={meal.name}
+                                            onClickFunc={()=>{
+                                                    setShowAddCartModal(true)
+                                                    setMealInfo(meal);
+                                                }}
+                                            cardHeight={"300px"}
+                                        >
+                                            {/* <ul className="list-unstyled text-secondary" style={{fontSize: "14px"}}>
+                                                <li>餐點類型: {meal.type}</li>
+                                                <li>
+                                                    餐點介紹:
+                                                    <p>{meal.description}</p>
+                                                </li>
+                                            </ul> */}
+                                            <div className="d-flex flex-row justify-content-between align-items-center gap-2">
+                                                <p className="card-text fs-5 m-0">NT$ {meal.price}</p>
+                                                {/* <button className="btn bg-light border">
+                                                    <i className="bi bi-cart-plus"></i>
+                                                </button> */}
+                                            </div>
+                                        </Card>
+                                ))) : (
+                                    <p className="fs-4 text-secondary text-center my-3">今日推薦餐點尚未推出，請選擇其他分類!</p>
+                                ))
+                            }
+                            {meals.filter(meal => selectType == "all" ? meal : meal.type == selectType).map((meal, index) => (
+                                <Card
+                                    key={index}
+                                    showImg={true}
+                                    imgPath={`${VITE_BASE_URL}${meal.img_path}`}
+                                    title={meal.name}
+                                    onClickFunc={()=>{
+                                            setShowAddCartModal(true)
+                                            setMealInfo(meal);
+                                        }}
+                                    cardHeight={"300px"}
+                                >
+                                    {/* <ul className="list-unstyled text-secondary" style={{fontSize: "14px"}}>
+                                        <li>餐點類型: {meal.type}</li>
+                                        <li>
+                                            餐點介紹:
+                                            <p>{meal.description}</p>
+                                        </li>
+                                    </ul> */}
+                                    <div className="d-flex flex-row justify-content-between align-items-center gap-2">
+                                        <p className="card-text fs-5 m-0">NT$ {meal.price}</p>
+                                        {/* <button className="btn bg-light border">
+                                            <i className="bi bi-cart-plus"></i>
+                                        </button> */}
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -308,7 +383,7 @@ export default function Home(){
                 }}
                 confirmBtnChildren={"加入購物車"}
                 closeBtnChldren={"取消"}>
-                <div className="mx-auto border border-3 rounded" style={{width: "80%"}}>
+                <div className="mx-auto rounded" style={{width: "85%"}}>
                     <img
                         style={{width: "100%", height: "250px", objectFit: "cover"}}
                         src={`${VITE_BASE_URL}${mealInfo?.img_path}`}/>
@@ -459,6 +534,103 @@ export default function Home(){
                         </>
                     )
                 }
+            </Modal>
+
+            {/* 購物車Modal */}
+            <Modal
+                show={showCartModal}
+                title={`購物車(${cartItems?.length})`}
+                onClose={()=>{
+                    setshowCartModal(false);
+                }}
+                showFooter={false}
+            >
+                <div className="px-3" style={{maxHeight: "60vh", overflowY: "scroll"}}>
+                    <table className="table align-middle">
+                        <tbody>
+                            {
+                                cartItems?.map((item, index)=>(
+                                    <tr key={index}>
+                                        <td>
+                                            <img style={{maxWidth: "80px"}} src={`${VITE_BASE_URL}${item.img_path}`}></img>
+                                        </td>
+                                        <td className="fw-bold">{item.name}</td>
+                                        <td className="text-secondary">${item.price} x {item.amount}</td>
+                                        <td className="fs-4" style={{color: "#f97316"}}>${item.amount * item.price}</td>
+                                    </tr>
+                                ))
+                            }
+                        </tbody>
+                    </table>
+                    <div className="cart-summary">
+                        <div className="cart-total">
+                            <span>總計</span>
+                            <span className="cart-total-price">
+                                NT$ {
+                                    cartItems?.reduce((total, item) => total + item.amount * item.price, 0)
+                                    .toLocaleString()
+                                }
+                            </span>
+                        </div>
+                    </div>
+                    <div className="payment-section">
+                        <h3 className="payment-title">付款方式</h3>
+                        <div>
+                            {[
+                                { value: 'cash', label: '現金', icon: '💵' },
+                                { value: 'credit', label: '信用卡', icon: '💳' },
+                                { value: 'mobile', label: '行動支付', icon: '📱' }
+                            ].map(method => (
+                                <button
+                                    key={method.value}
+                                    onClick={() => setPaymentMethod(method.value)}
+                                    className={`payment-option ${paymentMethod === method.value ? 'active' : ''}`}
+                                >
+                                <span className="payment-icon">{method.icon}</span>
+                                <span className="payment-label">{method.label}</span>
+                                {paymentMethod === method.value && (
+                                    <i className="bi bi-check2 payment-check"></i>
+                                )}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <button
+                        onClick={()=>{
+                            handleSendOrder();
+                            setshowCartModal(false);
+                        }}
+                        className="confirm-button"
+                    >
+                        確認訂單
+                    </button>
+                </div>
+            </Modal>
+
+            {/* 訂單資訊Modal */}
+            <Modal
+                show={showOrderResultModal}    
+                title={"訂單資訊"}
+                onClose={()=>{
+                    setShowOrderResultModal(false);
+                }}
+                showFooter={false}
+            >
+                <div className="success-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <h2 className="success-title">訂購成功！</h2>
+                <p className="order-label">您的訂單編號</p>
+                <p className="order-number">{orderResult?.o_id}</p>
+                <p className="text-center fw-bold text-secondary">付款方式: {orderResult?.o_pay} &emsp; 總金額: {orderResult?.o_t}</p>
+                <button
+                    onClick={() => setShowOrderResultModal(false)}
+                    className="done-button"
+                >
+                    完成
+                </button>
             </Modal>
         </>
     )

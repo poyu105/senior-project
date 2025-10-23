@@ -1,7 +1,7 @@
 import React from "react";
 
-// Modal參數: show:是否顯示modal, onClose:關閉modal(function), title:modal標題, children:自訂內容(html), onConfirm:確認(function), confirmBtn:確認按鈕內容, closeBtnChildren:取消按鈕內容
-export default function Modal({ show, onClose, title, children, onConfirm, showConfirmBtn=true, showCloseBtn=true, confirmBtnChildren, closeBtnChldren }) {
+// Modal參數: show:是否顯示modal, onClose:關閉modal(function), title:modal標題, children:自訂內容(html), onConfirm:確認(function), confirmBtn:確認按鈕內容, closeBtnChildren:取消按鈕內容, showFooter:顯示footer(預設true)
+export default function Modal({ show, onClose, title, children, onConfirm, showConfirmBtn=true, showCloseBtn=true, confirmBtnChildren, closeBtnChldren, showFooter=true }) {
     if (!show) return null; //只有當show為true時才顯示modal
 
     return (
@@ -17,12 +17,16 @@ export default function Modal({ show, onClose, title, children, onConfirm, showC
                             <button type="button" className="btn-close" onClick={onClose} />
                         </div>
                         <div className="modal-body">{children}</div>
-                        <div className="modal-footer justify-content-end">
-                            <div className="d-flex gap-1">
-                                <button className={`btn btn-primary ${showConfirmBtn?"":"visually-hidden"}`} type="button" onClick={onConfirm}>{confirmBtnChildren}</button>
-                                <button className={`btn btn-danger ${showCloseBtn?"":"visually-hidden"}`} type="button" onClick={onClose}>{closeBtnChldren}</button>
-                            </div>
-                        </div>
+                        {
+                            showFooter && (
+                                <div className={`modal-footer justify-content-end`}>
+                                    <div className="d-flex gap-1">
+                                        <button className={`btn btn-primary ${showConfirmBtn?"":"visually-hidden"}`} type="button" onClick={onConfirm}>{confirmBtnChildren}</button>
+                                        <button className={`btn btn-danger ${showCloseBtn?"":"visually-hidden"}`} type="button" onClick={onClose}>{closeBtnChldren}</button>
+                                    </div>
+                                </div>
+                            )
+                        }
                     </div>
                 </div>
             </div>
