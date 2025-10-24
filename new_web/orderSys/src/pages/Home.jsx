@@ -378,12 +378,14 @@ export default function Home(){
                 onClose={()=>{
                     setShowAddCartModal(false);
                 }}
+                showFooter={false}
                 onConfirm={()=>{
                     handleAddToCart();
                 }}
                 confirmBtnChildren={"加入購物車"}
-                closeBtnChldren={"取消"}>
-                <div className="mx-auto rounded" style={{width: "85%"}}>
+                closeBtnChldren={"取消"}
+            >
+                {/* <div className="mx-auto rounded" style={{width: "100%"}}>
                     <img
                         style={{width: "100%", height: "250px", objectFit: "cover"}}
                         src={`${VITE_BASE_URL}${mealInfo?.img_path}`}/>
@@ -401,24 +403,24 @@ export default function Home(){
                         </ul>
                         <div className="d-flex align-items-center justify-content-between">
                             <div>
-                                <span className="me-3">請選擇數量</span>
+                                <span className="me-3">請選擇數量</span> */}
                                 {/* 減少數量Btn */}
-                                <button
+                                {/* <button
                                     type="button"
                                     className="btn btn-outline-secondary p-1 rounded-3"
                                     onClick={()=>setAmount(prev=>prev-1)}>
                                     <i className="bi bi-dash"></i>
-                                </button>
+                                </button> */}
                                 {/* 數量 */}
-                                <input
+                                {/* <input
                                     type="number"
                                     className="text-center mx-2 rounded border border-secondary"
                                     style={{width: "50px"}}
                                     value={amount}
                                     onChange={(e)=>setAmount(e.target.value)}
-                                    required/>
+                                    required/> */}
                                 {/* 增加數量Btn */}
-                                <button
+                                {/* <button
                                     type="button"
                                     className="btn btn-outline-secondary p-1 rounded-3"
                                     onClick={()=>setAmount(prev=>prev+1)}>
@@ -428,7 +430,41 @@ export default function Home(){
                             <p className="m-0">價格: NT$ <span className="fs-2">{amount*mealInfo?.price}</span></p>
                         </div>
                     </div>
+                </div> */}
+                <div className="detail-image">
+                    <img
+                        
+                        src={`${VITE_BASE_URL}${mealInfo?.img_path}`}
+                    />
                 </div>
+                <h2 className="detail-name">{mealInfo?.name}</h2>
+                <p className="detail-description">{mealInfo?.description}</p>
+                <p className="detail-price">NT$ {mealInfo?.price}</p>
+                
+                <div className="quantity-control">
+                    <button
+                        onClick={() => setAmount(Math.max(1, amount - 1))}
+                        className="quantity-button"
+                    >
+                        -
+                    </button>
+                    <span className="quantity-display">{amount}</span>
+                    <button
+                        onClick={() => setAmount(amount + 1)}
+                        className="quantity-button"
+                    >
+                        +
+                    </button>
+                </div>
+
+                <button
+                    onClick={()=>{
+                        handleAddToCart();
+                    }}
+                    className="add-cart-button"
+                >
+                    加入購物車
+                </button>
             </Modal>
 
             {/* 登入Modal */}
