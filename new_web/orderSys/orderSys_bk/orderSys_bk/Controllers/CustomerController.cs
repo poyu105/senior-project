@@ -230,7 +230,13 @@ namespace orderSys_bk.Controllers
                     .FirstOrDefaultAsync();
                 Console.WriteLine($"【CustomerController】 -> CustomerController() -> orderData: {Services.JsonServices.ToJson(orderData)}");
 
-                return Ok(new { success = true, message = "訂購成功!", o_id = newOrder.order_id, o_pay = newOrder.payment, o_t = newOrder.total, o_data = orderData });
+                Dictionary<String, object> paymentMap = new Dictionary<string, object> {
+                    {"cash", "現金支付"},
+                    {"credit", "信用卡" },
+                    {"mobile", "行動支付" },
+                };
+
+                return Ok(new { success = true, message = "訂購成功!", o_id = newOrder.order_id, o_pay = paymentMap[newOrder.payment], o_t = newOrder.total, o_data = orderData });
             }
             catch (Exception ex)
             {
@@ -304,6 +310,8 @@ namespace orderSys_bk.Controllers
                             with DailyMeals as (
                                 select
                                     convert(varchar(8), o.date, 112) as order_date,  -- 同一天
+                                    o.season,
+		                            o.weather_condition,
                                     o.user_id,
                                     m.meal_id,
                                     m.name,
@@ -315,6 +323,8 @@ namespace orderSys_bk.Controllers
                                 where o.user_id = @user_id
                                 group by
                                     convert(varchar(8), o.date, 112),
+                                    o.season,
+		                            o.weather_condition,
                                     o.user_id,
                                     m.meal_id,
                                     m.name,
@@ -343,11 +353,11 @@ namespace orderSys_bk.Controllers
                     {
                         String userOrderedSql = baseOrderDataSql +
                             @"
-                            select *
-                            from DailyMeals
-                            where order_date in (select order_date from Last5Dates)
-                            order by order_date desc, name;
-                        ";
+                                select *
+                                from DailyMeals
+                                where order_date in (select order_date from Last5Dates)
+                                order by order_date desc, name;
+                            ";
 
                         var userOrderedResult = await _dbConnection.QueryAsync(userOrderedSql, new { user_id });
                         Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> userOrderedResult: {Services.JsonServices.ToJson(userOrderedResult)}");
@@ -355,6 +365,8 @@ namespace orderSys_bk.Controllers
                         List<Dictionary<String, object>> orders = userOrderedResult.Select(r => new Dictionary<string, object>
                         {
                             { "order_date", r.order_date },
+                            { "season", r.season },
+                            { "weather_condition", Services.StringServices.TrimSpaces(r.weather_condition) },
                             { "user_id", r.user_id },
                             { "meal_id", r.meal_id },
                             { "name", r.name },
@@ -386,7 +398,7 @@ namespace orderSys_bk.Controllers
                             if (item.ContainsKey("meal_id") && item["meal_id"] != null)
                             {
                                 String meal_id_str = item["meal_id"].ToString();
-                                Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 查詢推薦餐點的價格與圖片: meal_id_str: {meal_id_str}");
+                                Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 查詢推薦餐點的價格、描述與圖片: meal_id_str: {meal_id_str}");
                                 if (!meal_id_str.IsNullOrEmpty())
                                 {
                                     Guid meal_id = Guid.Parse(meal_id_str);
@@ -395,14 +407,16 @@ namespace orderSys_bk.Controllers
                                         .Select(m => new Dictionary<string, object>
                                         {
                                             { "price", m.price },
+                                            { "description", m.description },
                                             { "img_path", m.img_path },
                                         })
                                         .FirstOrDefaultAsync();
                                     if (meal != null)
                                     {
                                         item.Add("price", meal["price"]);
+                                        item.Add("description", meal["description"]);
                                         item.Add("img_path", meal["img_path"]);
-                                        Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 推薦餐點加入價格與圖片後 item: {Services.JsonServices.ToJson(item)}");
+                                        Console.WriteLine($"【CustomerController】 -> RecommendMeals() -> 推薦餐點加入價格、描述與圖片後 item: {Services.JsonServices.ToJson(item)}");
                                     }
                                 }
                             }
