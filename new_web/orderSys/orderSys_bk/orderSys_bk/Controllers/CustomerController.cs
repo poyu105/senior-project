@@ -406,6 +406,7 @@ namespace orderSys_bk.Controllers
                                         .Where(m => m.meal_id == meal_id)
                                         .Select(m => new Dictionary<string, object>
                                         {
+                                            { "id", m.meal_id },
                                             { "price", m.price },
                                             { "description", m.description },
                                             { "img_path", m.img_path },
@@ -413,6 +414,8 @@ namespace orderSys_bk.Controllers
                                         .FirstOrDefaultAsync();
                                     if (meal != null)
                                     {
+                                        item.Remove("meal_id");
+                                        item.Add("id", meal["id"]);
                                         item.Add("price", meal["price"]);
                                         item.Add("description", meal["description"]);
                                         item.Add("img_path", meal["img_path"]);
@@ -477,7 +480,7 @@ namespace orderSys_bk.Controllers
             return result.Select(r => new Dictionary<string, object>
                    {
                        {"rank", r.rank },
-                       { "meal_id", r.meal_id },
+                       { "id", r.meal_id },
                        { "name", r.name },
                        { "description", r.description },
                        { "type", r.type },
