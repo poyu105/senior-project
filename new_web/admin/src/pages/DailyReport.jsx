@@ -53,6 +53,29 @@ export default function DailyReport(){
         getReportData(date);
     }, [date]);
 
+    //儲存報表並更新模型
+    const handleSubmit = async ()=>{
+        try {
+            setLoading(true);
+            const data = {
+                date: formatDate(date),
+                latitude: location?.latitude,
+                longitude: location?.longitude,
+                data: reportData,
+            }
+            const res = await ApiServices.saveReports(data);
+
+            if(res){
+                alert(res.message);
+            }
+        } catch (error) {
+            alert(`發生錯誤: ${error}`);
+            console.error(`執行儲存報表時發生錯誤: ${error}`);
+        } finally{
+            setLoading(false);
+        }
+    }
+
     return(
         <>
             <Datebar 
@@ -111,13 +134,13 @@ export default function DailyReport(){
                                 >
                                     {
                                         !canEdit ? //過去日期不可編輯
-                                        <span className="text-secondary">{d.total_amount}</span> :
+                                        <span className="text-secondary">{d.amount}</span> :
                                         <input
                                             id={`salesAmountInput-${i}`}
                                             type="number"
                                             className="form-control text-center"
                                             style={{lineHeight: "1"}}
-                                            value={d.total_amount} 
+                                            value={d.amount} 
                                             min={0}
                                             readOnly={!canEdit} //過去日期不可編輯
                                             onChange={(e)=>{
@@ -126,8 +149,8 @@ export default function DailyReport(){
                                                     return;
                                                 }else{
                                                     const newReportData = [...reportData];
-                                                    newReportData[i].total_amount = parseInt(value);
-                                                    newReportData[i].total_price = newReportData[i].cost * parseInt(value);
+                                                    newReportData[i].amount = parseInt(value);
+                                                    newReportData[i].sales = newReportData[i].cost * parseInt(value);
                                                     setReportData(newReportData);
                                                 }
                                             }}
@@ -136,7 +159,7 @@ export default function DailyReport(){
                                 </td>
                                 {/* 銷售金額 */}
                                 <td>
-                                    {d.total_price}
+                                    {d.sales}
                                 </td>
                             </tr>
                             ))}
@@ -150,13 +173,13 @@ export default function DailyReport(){
                             <tr className="table-secondary">
                                 <th>總銷售數量</th>
                                 <td>
-                                    {reportData.reduce((sum, item) => sum + item.total_amount, 0)}
+                                    {reportData.reduce((sum, item) => sum + item.amount, 0)}
                                 </td>
                             </tr>
                             <tr className="table-secondary">
                                 <th>總銷售金額</th>
                                 <td>
-                                    {reportData.reduce((sum, item) => sum + item.total_price, 0)}
+                                    {reportData.reduce((sum, item) => sum + item.sales, 0)}
                                 </td>
                             </tr>
                         </tbody>
@@ -170,6 +193,9 @@ export default function DailyReport(){
                     <button
                         className="btn btn-primary"
                         disabled={!canEdit} //過去日期不可編輯
+                        onClick={()=>{
+                            handleSubmit();
+                        }}
                     >
                         儲存
                     </button>
