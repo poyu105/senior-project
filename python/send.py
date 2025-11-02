@@ -95,9 +95,9 @@ def feedback():
     print("=== 收到模型更新請求 ===")
     try:
         data = request.get_json()
-        message, error, status_code = difference_model.handle_feedback(data) # 處理回饋並更新模型
+        success, message = difference_model.handle_feedback(data) # 處理回饋並更新模型
 
-        return jsonify({"message": message}), status_code
+        return jsonify({"success": success, "message": message})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
