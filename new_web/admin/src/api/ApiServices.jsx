@@ -62,6 +62,7 @@ const ApiServices = {
     getPrediction: (data) => fetchData('/Admin/getPrediction', 'POST', data),  //取得預測銷售資料
 
     getReportData: (date) => fetchData(`/Admin/getReportData?date=${date}`), //取得報表資料
+    saveReports: (data) => fetchData(`/Admin/saveReport`, 'POST', data), //儲存報表資料
 }
 
 export default ApiServices;
