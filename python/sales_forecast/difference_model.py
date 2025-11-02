@@ -37,7 +37,7 @@ def _preprocess_data(df):
     df['season'] = df['date'].apply(get_season)
     return df
 
-
+#訓練模型kernel
 def train_model():
     """使用 SALES_FILE 的資料來訓練或重新訓練模型，並評估準確度"""
     print("正在檢查訓練資料檔案路徑：", os.path.abspath(SALES_FILE))
@@ -95,7 +95,7 @@ def train_model():
         print(error_msg)
         return False, None, error_msg
 
-
+#銷售預測
 def predict_sales(sales_data, prediction_data):
     """根據提供的歷史資料和預測目標，進行銷售預測"""
     print("正在檢查模型檔案路徑：", MODEL_FILE)
@@ -186,7 +186,7 @@ def predict_sales(sales_data, prediction_data):
     except Exception as e:
         return False, None, f"預測過程中發生錯誤: {repr(e)}"
 
-
+#使用回饋資料更新sec
 def update_model_with_feedback(new_records_df):
     try:
         columns_to_save = ['date', 'season', 'weather', 'type', 'amount']
@@ -200,8 +200,8 @@ def update_model_with_feedback(new_records_df):
             escapechar='\\'
         )
         print("銷售資料已更新，正在重新訓練模型...")
-        _, error, _ = train_model()
-        if error:
+        success, error, _ = train_model()
+        if not success:
             return False, f"重新訓練時發生錯誤: {error}"
         return True, "模型已根據最新回饋資料重新訓練完成。"
     except Exception as e:
@@ -209,20 +209,15 @@ def update_model_with_feedback(new_records_df):
         print(error_msg)
         return False, error_msg
 
+#處理訓練main
 def handle_feedback(data):
     feedback_date_str = data.get("date")
     weather = data.get("weather")
     feedback_items = data.get("data")
+    season = data.get("season")
 
-    if not all([feedback_date_str, weather, feedback_items]):
-        return None, "請求中缺少 'date', 'weather', 或 'data' 欄位", 400
-
-    try:
-        feedback_date = datetime.strptime(feedback_date_str, '%Y-%m-%d')
-    except ValueError:
-        return None, f"無法解析的回饋日期格式: {feedback_date_str}，應為 YYYY-MM-DD", 400
-    
-    season = get_season(feedback_date)
+    if not all([feedback_date_str, weather, feedback_items, season]):
+        return False, "請求中缺少 'date', 'weather', 'data', 'season' 欄位"
     
     new_records = []
     log_records = []
@@ -254,7 +249,7 @@ def handle_feedback(data):
         ]))
 
     if not new_records:
-        return None, "在 'data' 列表中沒有找到任何有效的回饋紀錄", 400
+        return False, "在 'data' 列表中沒有找到任何有效的回饋紀錄"
 
     try:
         log_df = pd.DataFrame(log_records)
@@ -266,10 +261,10 @@ def handle_feedback(data):
             quoting=csv.QUOTE_MINIMAL
         )
     except Exception as e:
-        return None, f"寫入 feedback_log.csv 時發生錯誤: {repr(e)}", 500
+        return False, f"寫入 feedback_log.csv 時發生錯誤: {repr(e)}"
 
     new_records_df = pd.DataFrame(new_records)
     success, message = update_model_with_feedback(new_records_df)
     if not success:
-        return None, f"處理回饋時發生錯誤: {message}", 500
-    return "Feedback received and model updated successfully.", None, 200
+        return False, f"處理回饋時發生錯誤: {message}"
+    return True, "模型更新成功!"
