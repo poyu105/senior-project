@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using orderSys_bk.Data;
 using orderSys_bk.Model.Dto;
 using senior_project_web.Models;
+using System.Collections;
 using System.Data;
 using System.Globalization;
 
@@ -517,22 +518,24 @@ namespace orderSys_bk.Controllers
                         SELECT 
                             m.meal_id,
                             m.name,
+                            m.type,
                             m.cost,
-                            COALESCE(SUM(CASE WHEN o.date >= @today AND o.date < @tomorrow THEN om.amount ELSE 0 END), 0) AS total_amount,
-                            COALESCE(SUM(CASE WHEN o.date >= @today AND o.date < @tomorrow THEN om.amount * m.cost ELSE 0 END), 0) AS total_price
+                            COALESCE(SUM(CASE WHEN o.date >= @today AND o.date < @tomorrow THEN om.amount ELSE 0 END), 0) AS amount,
+                            COALESCE(SUM(CASE WHEN o.date >= @today AND o.date < @tomorrow THEN om.amount * m.cost ELSE 0 END), 0) AS sales
                         FROM [Meal] AS m
                         LEFT JOIN [Order_Meal] AS om ON om.meal_id = m.meal_id
                         LEFT JOIN [Order] AS o ON o.order_id = om.order_id
-                        GROUP BY m.meal_id, m.name, m.cost
+                        GROUP BY m.meal_id, m.name, m.type, m.cost
                     ";
                 var reportData = await _dbConnection.QueryAsync(totalOrdersSql, new { today, tomorrow });
                 List<Dictionary<String, Object>> salesSummary = reportData.Select(r => new Dictionary<String, Object>
                 {
                     { "meal_id", r.meal_id.ToString() },
                     { "meal_name", r.name },
+                    { "type", r.type },
                     { "cost", r.cost },
-                    { "amount", r.total_amount },
-                    { "sales", r.total_price }
+                    { "amount", r.amount },
+                    { "sales", r.sales }
                 }).ToList();
                 Console.WriteLine($"【AdminController】 -> GetReportData() -> 銷售報表資料筆數: {salesSummary.Count}");
                 Console.WriteLine($"【AdminController】 -> GetReportData() -> 銷售報表資料: {System.Text.Json.JsonSerializer.Serialize(salesSummary)}");
@@ -553,6 +556,187 @@ namespace orderSys_bk.Controllers
             finally
             {
                 Console.WriteLine("======【ConnectionEnd: AdminController -> GetReportData()】======");
+            }
+        }
+
+        //儲存每日報表
+        [HttpPost("saveReport")]
+        public async Task<IActionResult> SaveReport([FromBody] Dictionary<String, Object> req)
+        {
+            Console.WriteLine("=====【ConnectionStart: AdminController -> SaveReport()】=====");
+            if (req.IsNullOrEmpty())
+            {
+                return Ok(new { success = false, message = "錯誤的報表資料" });
+            }
+
+            String? date = req.ContainsKey("date") ? req["date"].ToString() : ""; //報表日期
+            String? latitudeStr = req["latitude"].ToString() ?? null; //緯度
+            String? longitudeStr = req["longitude"].ToString() ?? null; //經度
+            List<Dictionary<String, Object>>? data = req.ContainsKey("data") ? Services.JsonServices.ToListOfDictionary(req["data"]) : null; //報表資料
+            Console.WriteLine($"【AdminController】 -> SaveReport() -> 儲存報表: date = {date}, latitude = {latitudeStr}, longitude = {longitudeStr}, data = {data}");
+
+            if (date.IsNullOrEmpty())
+            {
+                return Ok(new { success = false, message = "報表日期不可為空" });
+            }
+
+            if(data.IsNullOrEmpty() || data?.Count <= 0)
+            {
+                return Ok(new { success = false, message = "報表資料不可為空" });
+            }
+
+            if(!DateTime.TryParse(date, out DateTime dt))
+            {
+                return Ok(new { success = false, message = "日期轉換錯誤，請聯繫管理員!" });
+            }
+            date = dt.ToString("yyyy-MM-dd");
+            Console.WriteLine($"【AdminController】 -> SaveReport() -> 日期轉換 {date} -> {dt}");
+
+            if(latitudeStr.IsNullOrEmpty() || longitudeStr.IsNullOrEmpty())
+            {
+                return Ok(new { success = false, message = "取得地理位置失敗，無法獲取天氣狀況!" });
+            }
+            double latitude = double.Parse(latitudeStr);
+            double longitude = double.Parse(longitudeStr);
+
+            try
+            {
+                String season = Services.WeatherService.getSeason(dt.Month);
+                String weather_condition = await Services.WeatherService.GetWeatherForecastAsync(date, latitude, longitude);
+                Console.WriteLine($"【AdminController】 -> SaveReport() -> season: {season}, weather_condition: {weather_condition}");
+
+                for (int i=0; i<data.Count; i++)
+                {
+                    Dictionary<String, Object> dataDict = data[i];
+                    String salesStr = dataDict["sales"].ToString() ?? "";
+                    String amountStr = dataDict["amount"].ToString() ?? "";
+                    String meal_idStr = dataDict["meal_id"].ToString() ?? "";
+                    Console.WriteLine($"【AdminController】 -> SaveReport() -> salesStr: {salesStr}, amountStr: {amountStr}, meal_id: {meal_idStr}");
+
+                    if(salesStr.IsNullOrEmpty() || amountStr.IsNullOrEmpty() || meal_idStr.IsNullOrEmpty() )
+                    {
+                        return Ok(new { success = false, message = "日期、數量、餐點id不可為空" });
+                    }
+
+                    int sales = int.Parse(salesStr);
+                    int amount = int.Parse(amountStr);
+                    Guid meal_id = Guid.Parse(meal_idStr);
+
+                    String insertSql =
+                        @"
+                            insert into [Daily_Sales_Report]
+                            (total_sales, total_quantity, date, meal_id, weather_condition, season)
+                            values (@sales, @amount, @dt, @meal_id, @weather_condition, @season)
+                        ";
+                    int result = await _dbConnection.ExecuteAsync(insertSql, new
+                    {
+                        sales = sales,
+                        amount = amount,
+                        dt = dt,
+                        meal_id = meal_id,
+                        weather_condition = weather_condition,
+                        season = season,
+                    });
+
+                    if(result == 0 )
+                    {
+                        return Ok(new { success = false, message = $"儲存報表: {dt} - {meal_id} - {amount} - {sales} 失敗，請聯繫管理員!" });
+                    }
+
+                    String getPredictedSql =
+                        @"
+                            select predicted_sales as predicted_amount
+                            from [Prediction]
+                            where meal_id = @meal_id
+                        ";
+                    var predAmount = await _dbConnection.QueryFirstOrDefaultAsync(getPredictedSql, new { meal_id });
+                    if(predAmount != null)
+                    {
+                        dataDict["predicted_amount"] = predAmount;
+                    }
+
+                    dataDict["real_amount"] = dataDict["amount"];
+                    dataDict.Remove("amount");
+                }
+
+                String pythonUpdateResult = await CallPythonUpdate(date, weather_condition, season, data);
+                if( pythonUpdateResult != null )
+                {
+                    return Ok(new { success = true, message = $"報表儲存成功! {pythonUpdateResult}" });
+                }
+                else
+                {
+                    return Ok(new { success = false, message = "執行python更新模型失敗!" });
+                }
+            } catch (Exception ex)
+            {
+                Console.WriteLine("\n-----【ERROR】-----\n");
+                Console.WriteLine("【AdminController】 -> SaveReport() -> 伺服器錯誤: " + ex.Message);
+                Console.WriteLine("\n-------------------\n");
+                return StatusCode(500, new { message = $"伺服器錯誤: {ex.Message}" });
+            } finally
+            {
+                Console.WriteLine("======【ConnectionEnd: AdminController -> SaveReport()】======");
+            }
+        }
+
+        //更新銷售預測模型
+        private async Task<String>CallPythonUpdate(String date, String weather, String season, List<Dictionary<String, Object>> data)
+        {
+            Console.WriteLine($"【AdminController】 -> CallPythonUpdate() -> 呼叫Python進行模型更新: date: {date}, weather: {weather}, season: {season}, data: {Services.JsonServices.ToJson(data)}");
+            var payload = new
+            {
+                date = date,
+                weather = weather,
+                season = season,
+                data = data,
+            };
+            Console.WriteLine($"【AdminController】 -> CallPythonUpdate() -> 呼叫Python進行模型更新: payload: {Services.JsonServices.ToJson(payload)}");
+
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("http://127.0.0.1:5000/feedback", payload);
+                Console.WriteLine($"【AdminController】 -> CallPythonUpdate() -> 呼叫Python進行模型更新: response: {response}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var res = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+                    bool success = false;
+                    string msg = "";
+
+                    if (res != null)
+                    {
+                        if (res.ContainsKey("success"))
+                            bool.TryParse(res["success"]?.ToString(), out success);
+
+                        if (res.ContainsKey("message"))
+                            msg = res["message"]?.ToString() ?? "";
+
+                        Console.WriteLine($"【AdminController】 -> CallPythonUpdate() -> 呼叫Python進行模型更新: success: {success}");
+                        Console.WriteLine($"【AdminController】 -> CallPythonUpdate() -> 呼叫Python進行模型更新: msg: {msg}");
+                        if (success)
+                        {
+                            return msg;
+                        }
+                        else
+                        {
+                            throw new Exception(msg);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("回傳資料為空!");
+                    }
+
+                }
+                else
+                {
+                    throw new Exception("Python模型更新服務回傳錯誤狀態碼: " + response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("呼叫Python進行模型更新失敗: " + ex.Message);
             }
         }
     }
