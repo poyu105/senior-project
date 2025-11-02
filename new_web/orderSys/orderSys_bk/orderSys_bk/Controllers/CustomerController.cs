@@ -501,10 +501,39 @@ namespace orderSys_bk.Controllers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<Dictionary<String, Object>>();
-                    List<Dictionary<String, Object>> meals = result != null && result.ContainsKey("orders") ? Services.JsonServices.ToListOfDictionary(result["orders"]) as List<Dictionary<String, Object>> : new List<Dictionary<String, Object>>();
-                    Console.WriteLine($"【CustomerController】 -> CallPythonRecommendAsync() -> 呼叫Python進行餐點推薦: meals: {Services.JsonServices.ToJson(meals)}");
-                    return meals;
+                    var res = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+                    bool success = false;
+                    string msg = "";
+
+                    if (res != null)
+                    {
+                        if (res.ContainsKey("success"))
+                            bool.TryParse(res["success"]?.ToString(), out success);
+
+                        if (res.ContainsKey("msg"))
+                            msg = res["msg"]?.ToString() ?? "";
+
+                        List<Dictionary<string, object>> result = null;
+                        if (res.ContainsKey("meals"))
+                            result = Services.JsonServices.ToListOfDictionary(res["meals"]);
+
+                        Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行餐點推薦: success: {success}");
+                        Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行餐點推薦: msg: {msg}");
+                        Console.WriteLine($"【AdminController】 -> CallPythonPredictionAsync() -> 呼叫Python進行餐點推薦: result: {System.Text.Json.JsonSerializer.Serialize(result)}");
+                        if (success)
+
+                        {
+                            return result;
+                        }
+                        else
+                        {
+                            throw new Exception(msg);
+                        }
+                    }
+                    else
+                    {
+                        throw new Exception("回傳資料為空!");
+                    }
                 }
                 else
                 {

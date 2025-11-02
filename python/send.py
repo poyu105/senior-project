@@ -47,19 +47,20 @@ def face_recognition_api():
 ##################
 
 ### 推薦餐點API ###
-from api_integration.recommender import recommend_from_payload
-@app.post("/recommend")
+from recommend.recommender import generate_recommendations
+@app.route("/recommend", methods=["POST"])
 def api_recommend():
     print("=== 收到推薦餐點請求 ===")
     try:
-        payload = request.get_json(force=True)  # 取得 JSON body
-        user    = request.args.get("user", "guest") # 預設 user 為 guest
-        topk    = int(request.args.get("topk", 5)) # 預設 topk 為 5
-        window  = int(request.args.get("window", 14)) # 預設 window 為 14
-        when    = request.args.get("when", None) # 預設為 None (即現在時間)
+        data = request.get_json()
 
-        result = recommend_from_payload(payload, user=user, when=when, topk=topk, window=window)
-        return jsonify(result)
+        if not data or not isinstance(data, list) or len(data) == 0:
+            return jsonify({"success": False, "error": "無效的 JSON 格式。"}), 400
+
+        input_data = data[0]
+        recommendations_list = generate_recommendations(input_data)
+
+        return jsonify({"success": True, "meals": recommendations_list, "msg": "成功取得推薦結果"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
     finally:
@@ -81,7 +82,7 @@ def process_data():
         
         success, result, msg = difference_model.predict_sales(sales_data, prediction_data) # 呼叫模型預測函式
         
-        return jsonify({"success": success, "result": result, "msg": msg})
+        return jsonify({"success": True, "result": result, "msg": msg})
     except Exception as e:
         print(f"send發生例外錯誤{str(e)}")
         return jsonify({"success": False, "error": str(e)}), 500
