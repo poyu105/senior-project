@@ -25,7 +25,7 @@ export default function SalesChart({ title, data }) {
             enabled: true,
         },
         xaxis: {
-            categories: data.map(item => item.name),
+            categories: data.map(item => item.meal_name),
             labels: {
                 rotate: -45,
                 style: {
@@ -66,17 +66,17 @@ export default function SalesChart({ title, data }) {
         {
             name: '銷售數量',
             type: 'bar',
-            data: data.map(item => item.amount),
+            data: data.map(item => item.amount ?? 0),
         },
         {
             name: '銷售額',
             type: 'line',
-            data: data.map(item => item.sales),
+            data: data.map(item => item.sales ?? 0),
         },
         {
             name: '單價',
             type: 'none',
-            data: data.map(item => item.cost),
+            data: data.map(item => item.cost ?? 0),
         },
     ];
 
