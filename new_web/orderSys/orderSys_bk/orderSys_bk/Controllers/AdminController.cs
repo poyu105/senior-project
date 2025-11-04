@@ -506,8 +506,8 @@ namespace orderSys_bk.Controllers
                         String insSql =
                             @"
                               INSERT INTO [Prediction] 
-                                (prediction_id, date, predicted_sales, weather_condition, temperature, model_version, create_at, meal_id)
-                                VALUES(@prediction_id, @predictionDateStr, @prediction_sales, @weatherCondition, @temperature, @model_version, @create_at, @meal_id)
+                                (prediction_id, date, predicted_sales, weather_condition, season, create_at, meal_id)
+                                VALUES(@prediction_id, @predictionDateStr, @prediction_sales, @weatherCondition, @season, @create_at, @meal_id)
                             ";
 
                         await _dbConnection.ExecuteAsync(insSql, new { 
@@ -515,8 +515,7 @@ namespace orderSys_bk.Controllers
                             predictionDateStr, 
                             prediction_sales, 
                             weatherCondition,
-                            temperature = 0,
-                            model_version = "1.0.0",
+                            season,
                             create_at = DateTime.Now, 
                             meal_id
                         });
