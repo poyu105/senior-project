@@ -475,8 +475,58 @@ namespace orderSys_bk.Controllers
                 Dictionary<String, Object> predictionResult = new Dictionary<String, Object>();
                 predictionResult = await CallPythonPredictionAsync(salesReportsFromDB, predictionData); //呼叫python進行銷售預測
                 Console.WriteLine($"【AdminController】 -> GetPrediction() -> 銷售預測結果: {System.Text.Json.JsonSerializer.Serialize(predictionResult)}");
+                Console.WriteLine($"【AdminController】 -> GetPrediction() ->  回寫資料: 日期: {predictionDateStr}, 季節: {season}, 天氣狀況: {weatherCondition}");
 
-                return Ok(new { success = true, data = predictionResult } );
+                predictionResult.TryGetValue("prediction_list", out var prediction_listObj);
+                List<Dictionary<String, Object>> prediction_list = Services.JsonServices.ToListOfDictionary(prediction_listObj);
+                Console.WriteLine($"【AdminController】 -> GetPrediction() ->  回寫資料: 預測資料: {prediction_list}");
+
+                if( prediction_list.Count > 0 )
+                {
+                    //先刪除舊的預測資料
+                    String delSql =
+                        @"
+                            DELETE FROM [Prediction] 
+                            WHERE date = @predictionDateStr
+                        ";
+                    await _dbConnection.ExecuteAsync( delSql, new { predictionDateStr } );
+
+                    Console.WriteLine($"【AdminController】 -> GetPrediction() -> 已刪除舊資料");
+
+                    //刪完再insert
+                    foreach(var prediction in prediction_list)
+                    {
+                        Guid prediction_id = Guid.NewGuid();
+                        prediction.TryGetValue("amount", out var amountObj);
+                        int prediction_sales = Convert.ToInt32(amountObj?.ToString());
+                        prediction.TryGetValue("meal_id", out var meal_idObj);
+                        String meal_id = meal_idObj?.ToString() ?? "";
+                        Console.WriteLine($"【AdminController】 -> GetPrediction() -> 回寫DB prediction_id: {prediction_id}, date: {predictionDateStr}, prediction_sales: {prediction_sales}, weather_condition: {weatherCondition}, meal_id: {meal_id}");
+
+                        String insSql =
+                            @"
+                              INSERT INTO [Prediction] 
+                                (prediction_id, date, predicted_sales, weather_condition, temperature, model_version, create_at, meal_id)
+                                VALUES(@prediction_id, @predictionDateStr, @prediction_sales, @weatherCondition, @temperature, @model_version, @create_at, @meal_id)
+                            ";
+
+                        await _dbConnection.ExecuteAsync(insSql, new { 
+                            prediction_id,
+                            predictionDateStr, 
+                            prediction_sales, 
+                            weatherCondition,
+                            temperature = 0,
+                            model_version = "1.0.0",
+                            create_at = DateTime.Now, 
+                            meal_id
+                        });
+                    }
+                    return Ok(new { success = true, data = predictionResult });
+                }
+                else
+                {
+                    throw new Exception("預測清單為空");
+                }
             }
             catch (Exception ex)
             {
@@ -601,6 +651,14 @@ namespace orderSys_bk.Controllers
 
             try
             {
+                String delSql =
+                    @"
+                        DELETE FROM [Daily_Sales_Report]
+                        WHERE date = @dt
+                    ";
+                await _dbConnection.ExecuteAsync(delSql, new {dt});
+                Console.WriteLine($"【AdminController】 -> SaveReport() -> 刪除舊報表成功! dt: {dt}");
+
                 String season = Services.WeatherService.getSeason(dt.Month);
                 String weather_condition = await Services.WeatherService.GetWeatherForecastAsync(date, latitude, longitude);
                 Console.WriteLine($"【AdminController】 -> SaveReport() -> season: {season}, weather_condition: {weather_condition}");
@@ -649,10 +707,10 @@ namespace orderSys_bk.Controllers
                             from [Prediction]
                             where meal_id = @meal_id
                         ";
-                    var predAmount = await _dbConnection.QueryFirstOrDefaultAsync(getPredictedSql, new { meal_id });
-                    if(predAmount != null)
+                    int? predAmount = await _dbConnection.QueryFirstOrDefaultAsync<int?>(getPredictedSql, new { meal_id });
+                    if(predAmount.HasValue)
                     {
-                        dataDict["predicted_amount"] = predAmount;
+                        dataDict["predicted_amount"] = predAmount.Value;
                     }
 
                     dataDict["real_amount"] = dataDict["amount"];
