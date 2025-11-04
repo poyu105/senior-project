@@ -25,7 +25,7 @@ export default function SalesChart({ title, data }) {
             enabled: true,
         },
         xaxis: {
-            categories: data.map(item => item.meal_name),
+            categories: data.map(item => item.meal_name || item.name),
             labels: {
                 rotate: -45,
                 style: {

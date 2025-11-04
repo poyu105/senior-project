@@ -246,6 +246,7 @@ namespace orderSys_bk.Controllers
                             meal_id = m.meal_id.ToString(),
                             meal_name = m.name,
                             amount = oms.Sum(x => x.amount),
+                            cost = m.cost,
                             sales = m.price * oms.Sum(x => x.amount),
                         }
                     )
