@@ -48,10 +48,11 @@ namespace orderSys_bk.Services
                 Console.WriteLine($"【WeatherService】 -> GetWeatherForecastAsync() -> 天氣預報資料json: {json}");
                 using var doc = JsonDocument.Parse(json);
 
-                var code = doc.RootElement
+                var codeElem = doc.RootElement
                      .GetProperty("daily")
-                     .GetProperty("weather_code")[0]
-                     .GetInt32();
+                     .GetProperty("weather_code")[0];
+
+                int code = codeElem.GetRawText() == "null" ? 0 : codeElem.GetInt32();
 
                 //將天氣代碼轉成中文描述
                 //自訂代碼: S:晴天, C:陰天, R:雨天, N:未知天氣
